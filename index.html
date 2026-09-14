@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COLVEC - Gestión Documentaria</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between hidden md:flex">
+            <div>
+                <div class="p-5 border-b border-slate-800">
+                    <h1 class="text-xl font-bold text-white tracking-wide">COLVEC C&M</h1>
+                    <p class="text-xs text-slate-400 mt-1">Gestión Documentaria</p>
+                </div>
+                <nav class="p-4 space-y-1">
+                    <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white transition-colors">
+                        <i class="fa-solid fa-house"></i> Inicio
+                    </button>
+                    <button onclick="switchTab('proyectos')" id="btn-proyectos" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors">
+                        <i class="fa-solid fa-helmet-safety"></i> Proyectos / Clientes
+                    </button>
+                    <button onclick="switchTab('cartas')" id="btn-cartas" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors">
+                        <i class="fa-solid fa-file-lines"></i> Generar Cartas
+                    </button>
+                    <button onclick="switchTab('historial')" id="btn-historial" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Historial Emisiones
+                    </button>
+                </nav>
+            </div>
+            <div class="p-4 border-t border-slate-800 text-xs text-slate-500">
+                <p>Sesión: <span class="text-slate-300 font-medium">Ing. Luis Mallma (Admin)</span></p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-y-auto">
+            
+            <header class="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shadow-sm">
+                <div class="flex items-center gap-4">
+                    <span id="page-title" class="text-lg font-bold text-slate-900">Panel Principal</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1 rounded-full">Sistema Activo</span>
+                </div>
+            </header>
+
+            <main class="p-6">
+                
+                <!-- DASHBOARD VIEW -->
+                <section id="view-dashboard" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-medium text-slate-500">Proyectos Registrados</h3>
+                                <i class="fa-solid fa-building text-blue-600 bg-blue-50 p-3 rounded-lg"></i>
+                            </div>
+                            <p class="text-3xl font-bold text-slate-900 mt-4" id="stat-proyectos">3</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-medium text-slate-500">Cartas Emitidas 2026</h3>
+                                <i class="fa-solid fa-file-contract text-emerald-600 bg-emerald-50 p-3 rounded-lg"></i>
+                            </div>
+                            <p class="text-3xl font-bold text-slate-900 mt-4" id="stat-cartas">48</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-medium text-slate-500">Borradores Pendientes</h3>
+                                <i class="fa-solid fa-clock text-amber-600 bg-amber-50 p-3 rounded-lg"></i>
+                            </div>
+                            <p class="text-3xl font-bold text-slate-900 mt-4">2</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h2 class="text-base font-bold text-slate-900 mb-4">Acceso Rápido</h2>
+                        <div class="flex gap-4">
+                            <button onclick="switchTab('cartas')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2">
+                                <i class="fa-solid fa-plus"></i> Nueva Carta / Documento
+                            </button>
+                            <button onclick="switchTab('proyectos')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2">
+                                <i class="fa-solid fa-folder-plus"></i> Registrar Proyecto
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PROYECTOS VIEW -->
+                <section id="view-proyectos" class="space-y-6 hidden">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h2 class="text-base font-bold text-slate-900 mb-4">Registrar Nuevo Proyecto o Cliente</h2>
+                        <form id="form-proyecto" onsubmit="guardarProyecto(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nombre del Proyecto / Obra</label>
+                                <input type="text" id="p-nombre" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Razón Social / Cliente</label>
+                                <input type="text" id="p-cliente" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Ubicación / Dirección</label>
+                                <input type="text" id="p-ubicacion" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tensión / Alimentador / Suministro</label>
+                                <input type="text" id="p-detalles" placeholder="Ej: 10KV / TRA002 / Suministro 70167655" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600">
+                            </div>
+                            <div class="md:col-span-2 flex justify-end">
+                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg text-sm transition-colors">Guardar Proyecto</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-5 border-b border-slate-200">
+                            <h2 class="text-base font-bold text-slate-900">Proyectos Activos en Base de Datos</h2>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-600">
+                                <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-4">Proyecto</th>
+                                        <th class="p-4">Cliente</th>
+                                        <th class="p-4">Ubicación</th>
+                                        <th class="p-4">Detalles Técnicos</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-proyectos" class="divide-y divide-slate-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- GENERAR CARTAS VIEW -->
+                <section id="view-cartas" class="space-y-6 hidden">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h2 class="text-base font-bold text-slate-900 mb-4">Generador Automático de Cartas</h2>
+                        <form id="form-carta" onsubmit="generarCarta(event)" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Seleccionar Proyecto</label>
+                                    <select id="c-proyecto" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600">
+                                        <option value="">-- Seleccione un proyecto --</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tipo de Documento</label>
+                                    <select id="c-tipo" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600">
+                                        <option value="Presentación de Expediente Técnico">Presentación de Expediente Técnico</option>
+                                        <option value="Levantamiento de Observaciones">Levantamiento de Observaciones</option>
+                                        <option value="Solicitud de Inicio de Obra">Solicitud de Inicio de Obra</option>
+                                        <option value="Solicitud de Maniobra / Corte de Energía">Solicitud de Maniobra / Corte de Energía</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Destinatario (Atención)</label>
+                                    <input type="text" id="c-destinatario" placeholder="Ej: Ing. César Marcelo Cashpa" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Asunto / Referencia</label>
+                                    <input type="text" id="c-asunto" placeholder="Ej: Presentación de expediente de media tensión" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600">
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-3 pt-2">
+                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg text-sm transition-colors">Generar Vista Previa y Número</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Vista Previa -->
+                    <div id="preview-container" class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm hidden space-y-6">
+                        <div class="flex justify-between items-start border-b pb-4">
+                            <div>
+                                <h3 class="font-bold text-lg text-slate-900">COLVEC C&M S.A.C.</h3>
+                                <p class="text-xs text-slate-500">Jr. Elías Aguirre N° 238 Of. 204 - Chimbote</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-bold text-blue-600" id="prev-num-carta">N.° 048-2026-COLVEC</p>
+                                <p class="text-xs text-slate-500">Chimbote, 14 de Septiembre de 2026</p>
+                            </div>
+                        </div>
+
+                        <div class="text-sm space-y-2 text-slate-700">
+                            <p><strong>Señores:</strong> <span id="prev-destinatario">--</span></p>
+                            <p><strong>Atención:</strong> <span id="prev-atencion">--</span></p>
+                            <p><strong>Asunto:</strong> <span id="prev-asunto">--</span></p>
+                            <p><strong>Referencia:</strong> Obra <span id="prev-obra">--</span></p>
+                        </div>
+
+                        <div class="text-sm text-slate-700 leading-relaxed space-y-4 pt-2">
+                            <p>De nuestra mayor consideración:</p>
+                            <p>Es grato dirigirnos a ustedes para saludarlos cordialmente y, al mismo tiempo, hacerles la presentación oficial respecto al proyecto indicado, cumpliendo con todas las especificaciones técnicas requeridas y normadas para la correcta ejecución de los trabajos.</p>
+                            <p>Sin otro particular, quedamos de ustedes.</p>
+                        </div>
+
+                        <div class="pt-8 text-sm">
+                            <p class="font-bold text-slate-900">Atentamente,</p>
+                            <div class="mt-12">
+                                <p class="font-bold text-slate-800">Ing. Luis Ancelmo Mallma Vega</p>
+                                <p class="text-xs text-slate-500">Gerente General - COLVEC C&M S.A.C.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 pt-4 border-t">
+                            <button onclick="registrarEmision()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-download"></i> Guardar en Historial y Descargar
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- HISTORIAL VIEW -->
+                <section id="view-historial" class="space-y-6 hidden">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-5 border-b border-slate-200 flex justify-between items-center">
+                            <h2 class="text-base font-bold text-slate-900">Historial de Cartas Emitidas</h2>
+                            <span id="contador-historial-badge" class="text-xs bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-full">Total: 3</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-600">
+                                <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-4">N.° Carta</th>
+                                        <th class="p-4">Tipo</th>
+                                        <th class="p-4">Proyecto</th>
+                                        <th class="p-4">Destinatario</th>
+                                        <th class="p-4">Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-historial" class="divide-y divide-slate-200">
+                                    <!-- Inyectado por JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <script>
+        let proyectos = [
+            { id: 1, nombre: "Hatun Fish", cliente: "HATUN FISH S.A.C.", ubicacion: "Chimbote", detalles: "Media Tensión 10KV / Suministro 70167655" },
+            { id: 2, nombre: "Servicentro La Doxa", cliente: "Servicentro La Doxa", ubicacion: "Nuevo Chimbote", detalles: "Alimentador TRA002 Lacramarca" },
+            { id: 3, nombre: "H.U. Serena", cliente: "Consorcio Serena", ubicacion: "Casma", detalles: "Suministro Mayor / 13.2 KV" }
+        ];
+
+        let historialCartas = [
+            { numero: "047-2026-COLVEC", tipo: "Presentación de Expediente", proyecto: "H.U. Serena", destinatario: "Hidrandina S.A.", fecha: "10/09/2026" },
+            { numero: "046-2026-COLVEC", tipo: "Solicitud de Maniobra", proyecto: "Servicentro La Doxa", destinatario: "Centro de Control", fecha: "08/09/2026" },
+            { numero: "045-2026-COLVEC", tipo: "Levantamiento de Observaciones", proyecto: "Hatun Fish", destinatario: "Ing. César Marcelo", fecha: "05/09/2026" }
+        ];
+
+        let contadorCartas = 47;
+        let cartaActualTemporal = null;
+
+        function switchTab(tabId) {
+            document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('view-' + tabId).classList.remove('hidden');
+
+            document.querySelectorAll('aside nav button').forEach(el => {
+                el.classList.remove('bg-blue-600', 'text-white');
+                el.classList.add('hover:bg-slate-800', 'hover:text-white');
+            });
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-blue-600', 'text-white');
+                activeBtn.classList.remove('hover:bg-slate-800');
+            }
+
+            const titles = {
+                'dashboard': 'Panel Principal',
+                'proyectos': 'Gestión de Proyectos y Clientes',
+                'cartas': 'Generador Automático de Cartas',
+                'historial': 'Historial de Emisiones'
+            };
+            document.getElementById('page-title').innerText = titles[tabId];
+
+            if(tabId === 'proyectos') renderProyectos();
+            if(tabId === 'cartas') actualizarSelectProyectos();
+            if(tabId === 'historial') renderHistorial();
+        }
+
+        function renderProyectos() {
+            const tbody = document.getElementById('tabla-proyectos');
+            tbody.innerHTML = '';
+            proyectos.forEach(p => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-4 font-medium text-slate-900">${p.nombre}</td>
+                        <td class="p-4">${p.cliente}</td>
+                        <td class="p-4">${p.ubicacion}</td>
+                        <td class="p-4 text-xs text-slate-500">${p.detalles}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('stat-proyectos').innerText = proyectos.length;
+        }
+
+        function guardarProyecto(e) {
+            e.preventDefault();
+            const nuevo = {
+                id: proyectos.length + 1,
+                nombre: document.getElementById('p-nombre').value,
+                cliente: document.getElementById('p-cliente').value,
+                ubicacion: document.getElementById('p-ubicacion').value,
+                detalles: document.getElementById('p-detalles').value
+            };
+            proyectos.push(nuevo);
+            document.getElementById('form-proyecto').reset();
+            alert('¡Proyecto registrado con éxito!');
+            renderProyectos();
+            switchTab('proyectos');
+        }
+
+        function actualizarSelectProyectos() {
+            const select = document.getElementById('c-proyecto');
+            select.innerHTML = '<option value="">-- Seleccione un proyecto --</option>';
+            proyectos.forEach(p => {
+                select.innerHTML += `<option value="${p.id}">${p.nombre} (${p.cliente})</option>`;
+            });
+        }
+
+        function generarCarta(e) {
+            e.preventDefault();
+            const proyectoId = document.getElementById('c-proyecto').value;
+            const proyectoSel = proyectos.find(p => p.id == proyectoId);
+            const tipo = document.getElementById('c-tipo').value;
+            const destinatario = document.getElementById('c-destinatario').value;
+            const asunto = document.getElementById('c-asunto').value;
+
+            contadorCartas++;
+            const numGenerado = `N.° ${String(contadorCartas).padStart(3, '0')}-2026-COLVEC`;
+
+            document.getElementById('prev-num-carta').innerText = numGenerado;
+            document.getElementById('prev-destinatario').innerText = proyectoSel.cliente;
+            document.getElementById('prev-atencion').innerText = destinatario;
+            document.getElementById('prev-asunto').innerText = `${tipo} - ${asunto}`;
+            document.getElementById('prev-obra').innerText = `${proyectoSel.nombre} ubicado en ${proyectoSel.ubicacion} [${proyectoSel.detalles}]`;
+            
+            cartaActualTemporal = {
+                numero: numGenerado,
+                tipo: tipo,
+                proyecto: proyectoSel.nombre,
+                destinatario: destinatario,
+                fecha: "14/09/2026"
+            };
+
+            document.getElementById('preview-container').classList.remove('hidden');
+        }
+
+        function registrarEmision() {
+            if(cartaActualTemporal) {
+                historialCartas.unshift(cartaActualTemporal);
+                document.getElementById('stat-cartas').innerText = historialCartas.length + 45;
+                alert('¡Carta guardada y registrada con éxito!');
+                switchTab('historial');
+            }
+        }
+
+        function renderHistorial() {
+            const tbody = document.getElementById('tabla-historial');
+            tbody.innerHTML = '';
+            historialCartas.forEach(h => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-4 font-medium text-slate-900">${h.numero}</td>
+                        <td class="p-4">${h.tipo}</td>
+                        <td class="p-4">${h.proyecto}</td>
+                        <td class="p-4">${h.destinatario}</td>
+                        <td class="p-4 text-xs text-slate-500">${h.fecha}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('contador-historial-badge').innerText = `Total: ${historialCartas.length}`;
+        }
+
+        renderProyectos();
+        renderHistorial();
+    </script>
+</body>
+</html>
