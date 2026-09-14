@@ -243,7 +243,7 @@
                         </div>
 
                         <div class="flex gap-3 pt-6 border-t no-print">
-                            <button onclick="registrarEmision()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm flex items-center gap-2">
+                            <button id="btn-guardar-cloud" onclick="registrarEmision()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm flex items-center gap-2">
                                 <i class="fa-solid fa-cloud-arrow-up"></i> Guardar en Historial (Cloud)
                             </button>
                             <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white font-medium px-4 py-2.5 rounded-lg text-sm flex items-center gap-2">
@@ -458,21 +458,32 @@
             const numCorrelativo = String(historialCartas.length + 1).padStart(3, '0');
             const numGenerado = `N.° ${numCorrelativo}-2026-COLVEC`;
 
-            document.getElementById('prev-num-carta').innerText = numGenerado;
-            document.getElementById('prev-destinatario').innerText = proyectoSel.cliente;
-            document.getElementById('prev-atencion').innerText = destinatario;
-            document.getElementById('prev-asunto').innerText = `${tipo} - ${asunto}`;
-            document.getElementById('prev-obra').innerText = `${proyectoSel.nombre} ubicado en ${proyectoSel.ubicacion} [${proyectoSel.detalles}]`;
+            // Buscar si ya existe para no duplicar correlativo si viene del historial
+            llenarVistaPreviaOFicial(numGenerado, proyectoSel.cliente, destinatario, `${tipo} - ${asunto}`, `${proyectoSel.nombre} ubicado en ${proyectoSel.ubicacion} [${proyectoSel.detalles}]`, document.getElementById('c-tipo').value, proyectoSel.nombre);
             
             cartaActualTemporal = {
                 numero: numGenerado,
                 tipo: tipo,
                 proyecto: proyectoSel.nombre,
+                cliente: proyectoSel.cliente,
+                ubicacion: proyectoSel.ubicacion,
+                detalles: proyectoSel.detalles,
                 destinatario: destinatario,
+                asuntoTexto: asunto,
                 fecha: new Date().toLocaleDateString()
             };
 
+            // Mostrar botón de guardar en la nube
+            document.getElementById('btn-guardar-cloud').style.display = 'inline-flex';
             document.getElementById('preview-container').classList.remove('hidden');
+        }
+
+        function llenarVistaPreviaOFicial(num, cliente, atencion, asunto, obra, tipo, proyectoNombre) {
+            document.getElementById('prev-num-carta').innerText = num;
+            document.getElementById('prev-destinatario').innerText = cliente;
+            document.getElementById('prev-atencion').innerText = atencion;
+            document.getElementById('prev-asunto').innerText = asunto;
+            document.getElementById('prev-obra').innerText = obra;
         }
 
         async function registrarEmision() {
@@ -487,6 +498,26 @@
                     alert('Error al guardar la carta: ' + error.message);
                 }
             }
+        }
+
+        function verCartaHistorial(id) {
+            const h = historialCartas.find(item => item.id === id);
+            if(!h) return;
+
+            // Rellenar formato con los datos históricos guardados
+            document.getElementById('prev-num-carta').innerText = h.numero;
+            document.getElementById('prev-destinatario').innerText = h.cliente || h.proyecto;
+            document.getElementById('prev-atencion').innerText = h.destinatario;
+            document.getElementById('prev-asunto').innerText = `${h.tipo} - ${h.asuntoTexto || 'Documento oficial'}`;
+            document.getElementById('prev-obra').innerText = `${h.proyecto} ${h.ubicacion ? 'ubicado en ' + h.ubicacion : ''} [${h.detalles || ''}]`;
+
+            // Ocultar botón de guardar a la nube porque ya está guardada
+            document.getElementById('btn-guardar-cloud').style.display = 'none';
+
+            // Ir a la pestaña de cartas para mostrar la vista previa
+            switchTab('cartas');
+            document.getElementById('preview-container').classList.remove('hidden');
+            window.scrollTo({ top: 400, behavior: 'smooth' });
         }
 
         async function eliminarCarta(id) {
@@ -516,7 +547,10 @@
                         <td class="p-4">${h.proyecto}</td>
                         <td class="p-4">${h.destinatario}</td>
                         <td class="p-4 text-xs text-slate-500">${h.fecha}</td>
-                        <td class="p-4 text-center">
+                        <td class="p-4 text-center space-x-2">
+                            <button onclick="verCartaHistorial('${h.id}')" class="text-blue-600 hover:text-blue-800 p-1.5 rounded-lg transition-colors" title="Ver / Imprimir Carta">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
                             <button onclick="eliminarCarta('${h.id}')" class="text-red-600 hover:text-red-800 p-1.5 rounded-lg transition-colors" title="Eliminar Carta">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
