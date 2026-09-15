@@ -8,14 +8,30 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    :root{--azul:#0071bc;--oscuro:#00243f} .bg-colvec{background:var(--oscuro)} .text-colvec{color:var(--oscuro)}
+    :root{--azul:#0071bc;--oscuro:#00243f;--gris:#e6e6e6;--celeste:#29abe2} .bg-colvec{background:var(--oscuro)} .text-colvec{color:var(--oscuro)}
+    .marca-titulo{font-family:"Gotham Black","Arial Black",Arial,sans-serif}.marca-texto{font-family:"Magistral Book",Arial,sans-serif}
+    body{font-family:"Magistral Book",Arial,sans-serif;background:#f3f7f9}
+    #sidebar{background:#00243f!important;border-right:4px solid #0071bc}
+    #sidebar .nav-btn{border:1px solid transparent;color:#d9e7ef;transition:.18s ease}
+    #sidebar .nav-btn:hover{background:#073554!important;border-color:#29abe2;color:#fff}
+    #sidebar .nav-btn.bg-blue-600{background:#0071bc!important;border-color:#29abe2;color:#fff;box-shadow:0 5px 16px #001a2d66}
+    #sidebar .nav-btn i{color:#29abe2}#sidebar .nav-btn.bg-blue-600 i{color:#fff}
+    #titulo{font-family:"Gotham Black","Arial Black",Arial,sans-serif;color:#00243f;letter-spacing:.01em}
+    main section>div.bg-white,main form.bg-white,main .bg-white.rounded-xl{border-color:#cbdde7!important;box-shadow:0 5px 18px #00243f0d}
+    main h3{font-family:"Gotham Black","Arial Black",Arial,sans-serif;color:#00243f}
+    button.bg-blue-600{background:#0071bc!important}button.bg-blue-600:hover{background:#005b99!important}
+    button.bg-emerald-600{background:#0071bc!important}button.bg-emerald-600:hover{background:#00243f!important}
+    table thead{background:#e6f4fa!important;color:#00243f}table tbody tr:hover{background:#f2faff!important}
+    input,textarea,select{background:#fff;border-color:#b8ccd8!important;color:#00243f}
+    input::placeholder,textarea::placeholder{color:#78909c}
+    #estado.bg-emerald-100{background:#e3f5fb!important;color:#00243f!important;border:1px solid #29abe2}
     input,textarea,select{outline:none} input:focus,textarea:focus,select:focus{border-color:var(--azul);box-shadow:0 0 0 3px #0071bc22}
     .toast{animation:entrar .2s ease-out}@keyframes entrar{from{transform:translateY(-8px);opacity:0}}
-    .carta-a4{width:min(100%,210mm);min-height:297mm;position:relative;background:#fff;overflow:hidden;font-family:Arial,sans-serif;color:#111}
+    .carta-a4{width:min(100%,210mm);min-height:297mm;position:relative;background:#fff;overflow:hidden;font-family:"Magistral Book",Arial,sans-serif;color:#111}
     .carta-a4 .contenido{padding:31mm 19mm 27mm 24mm;font-size:9.1pt;line-height:1.22}
-    .membrete-forma{position:absolute;left:0;right:0;top:0;height:25mm;background:linear-gradient(135deg,#f2f2f2 0 58%,#005b94 58% 62%,#087cbd 62%)}
-    .lateral-forma{position:absolute;right:0;top:83mm;bottom:24mm;width:9mm;background:linear-gradient(160deg,transparent 0 43%,#d9f1fa 43% 51%,#8bc8df 51% 59%,#438fab 59% 67%,transparent 67%)}
-    .lateral-datos{position:absolute;right:1.5mm;top:168mm;transform:rotate(-90deg) translateX(100%);transform-origin:right top;white-space:nowrap;font-size:7pt;color:#173b50;font-weight:bold}
+    .membrete-forma{position:absolute;left:0;right:0;top:0;height:25mm;background:linear-gradient(135deg,#e6e6e6 0 58%,#00243f 58% 62%,#0071bc 62%)}
+    .lateral-forma{position:absolute;right:0;top:83mm;bottom:24mm;width:9mm;background:linear-gradient(160deg,transparent 0 43%,#e6e6e6 43% 51%,#29abe2 51% 59%,#0071bc 59% 67%,transparent 67%)}
+    .lateral-datos{position:absolute;z-index:5;right:1.7mm;top:111mm;height:74mm;writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-size:7pt;line-height:1;color:#00243f;font-weight:bold;display:flex;align-items:center;justify-content:center;gap:8mm}
     .pie-carta{position:absolute;left:0;right:0;bottom:0;height:23mm;background:linear-gradient(to bottom,#fff 0 13%,#0071bc 13% 16%,#edf7fb 16%);display:grid;grid-template-columns:1.1fr 1.35fr 1.2fr;align-items:center;color:#0071bc;font-size:7pt;font-weight:bold;text-align:center;padding:5mm 10mm 1mm}
     .pie-carta>div+div{border-left:1px solid #0071bc;padding-left:4mm}
     .preview-stage{overflow:auto;padding:18px;background:#e2e8f0;border-radius:12px}
@@ -104,9 +120,9 @@
               <div class="membrete-forma"></div>
               <header class="absolute top-[3mm] left-[18mm] z-10 flex items-center gap-3">
                 <img src="logo.svg" onerror="mostrarErrorLogo(this)" class="h-[18mm] w-[18mm] object-contain" alt="Logo oficial COLVEC">
-                <div><h1 class="text-[20pt] leading-none font-black text-colvec tracking-wide">COLVEC C&M</h1><p class="text-[6.5pt] font-bold mt-1">Ingeniería, Consultoría y Servicios Eléctricos</p></div>
+                <div><h1 class="marca-titulo text-[20pt] leading-none font-black text-colvec tracking-wide">COLVEC C&M</h1><p class="marca-texto text-[6.5pt] font-bold mt-1">Ingeniería, Consultoría y Servicios Eléctricos</p></div>
               </header>
-              <div class="lateral-forma"></div><div class="lateral-datos">www.colvecsac.com&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@RUC:20610996575</div>
+              <div class="lateral-forma"></div><div class="lateral-datos"><span>● www.colvecsac.com</span><span>❖ RUC: 20610996575</span></div>
               <div class="contenido space-y-[3.2mm]">
                 <p class="text-center font-bold text-[8pt]">“AÑO DE LA ESPERANZA Y EL FORTALECIMIENTO DE LA DEMOCRACIA”</p>
                 <div class="grid grid-cols-2 items-end"><p id="prev-numero" class="font-bold underline"></p><p id="prev-fecha" class="text-right"></p></div>
