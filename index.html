@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>COLVEC C&M | Gestión Documentaria</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -72,12 +73,29 @@
       #preview-stage{display:block!important;padding:0!important;margin:0!important;height:297mm!important;overflow:visible!important;background:#fff!important}
       .no-print{display:none!important}.carta-hoja{padding:0!important}
     }
+    .campo-auth{width:100%;border:1px solid #cbd5e1;border-radius:.65rem;padding:.75rem .9rem;outline:none;transition:.15s}
+    .campo-auth:focus{border-color:#0071bc;box-shadow:0 0 0 3px #29abe233}
+    .chip-rol{display:inline-flex;align-items:center;border-radius:999px;padding:.2rem .65rem;font-size:.72rem;font-weight:800}
+    .fila-inactiva{opacity:.58;background:#f8fafc}
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
-  <div id="toast-zone" class="fixed top-4 right-4 z-50 space-y-2"></div>
+  <div id="toast-zone" class="fixed top-4 right-4 z-[120] space-y-2"></div>
+  <section id="login-screen" class="fixed inset-0 z-[100] bg-slate-100 flex items-center justify-center p-4">
+    <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200">
+      <div class="bg-[#00243f] px-8 py-7 text-white"><div class="flex items-center gap-4"><img src="logo.svg" class="h-14 w-14 object-contain rounded-xl bg-white p-1" alt="COLVEC C&M"><div><h1 class="text-2xl font-black">COLVEC C&M</h1><p class="text-sm text-sky-200">Gestión Documentaria</p></div></div></div>
+      <form id="form-login" class="p-8 space-y-4">
+        <div><h2 class="text-xl font-black text-[#00243f]">Iniciar sesión</h2><p class="mt-1 text-sm text-slate-500">Acceso exclusivo para personal autorizado.</p></div>
+        <label class="block text-sm font-semibold">Correo electrónico<input id="login-email" type="email" autocomplete="username" required class="campo-auth mt-1" placeholder="nombre@colvecsac.com"></label>
+        <label class="block text-sm font-semibold">Contraseña<div class="relative mt-1"><input id="login-password" type="password" autocomplete="current-password" minlength="6" required class="campo-auth pr-12"><button id="ver-clave" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" title="Mostrar contraseña"><i class="fa-solid fa-eye"></i></button></div></label>
+        <p id="login-error" class="hidden rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700"></p>
+        <button id="btn-login" class="w-full rounded-lg bg-[#0071bc] py-3 font-bold text-white hover:bg-[#005f9e]"><i class="fa-solid fa-right-to-bracket mr-2"></i>Ingresar</button>
+        <button id="btn-bootstrap" type="button" class="hidden w-full text-sm font-semibold text-[#0071bc] hover:underline">Crear el primer administrador</button>
+      </form>
+    </div>
+  </section>
   <div id="overlay" class="fixed inset-0 bg-black/40 z-30 hidden md:hidden" onclick="cerrarMenu()"></div>
-  <div class="flex min-h-screen">
+  <div id="app-shell" class="hidden flex min-h-screen">
     <aside id="sidebar" class="fixed md:sticky top-0 left-0 z-40 h-screen w-72 bg-slate-900 text-slate-300 flex-col justify-between -translate-x-full md:translate-x-0 transition-transform flex">
       <div>
         <div class="p-5 border-b border-slate-800 flex items-center gap-3">
@@ -86,7 +104,7 @@
         </div>
         <nav class="p-4 space-y-1" id="nav"></nav>
       </div>
-      <div class="p-4 border-t border-slate-800 text-xs">Ing. Luis Mallma · Administrador</div>
+      <div class="p-4 border-t border-slate-800"><p id="usuario-actual" class="truncate text-sm font-bold text-white">—</p><p id="rol-actual" class="mt-1 text-xs text-sky-300">—</p><button type="button" onclick="cerrarSesion()" class="mt-3 w-full rounded-lg border border-slate-600 px-3 py-2 text-left text-xs hover:bg-slate-800"><i class="fa-solid fa-arrow-right-from-bracket mr-2"></i>Cerrar sesión</button></div>
     </aside>
 
     <div class="flex-1 min-w-0">
@@ -177,7 +195,7 @@
                 <g fill="none" stroke="#0071bc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(408 40)"><path d="M2 2c2 9 9 16 18 18l5-5 7 4-2 9c-1 3-4 4-7 3C11 28 2 19-1 7-2 4-1 1 2 0z"/></g><g transform="translate(410 70)"><rect width="24" height="17" rx="2"/><path d="m2 3 10 8 10-8"/></g><g transform="translate(822 38)"><path d="M12 0C5 0 0 5 0 12c0 10 12 23 12 23s12-13 12-23C24 5 19 0 12 0z"/><circle cx="12" cy="12" r="4"/></g></g>
               </svg>
             </article>
-            <div id="acciones-preview" class="no-print p-4 bg-white border flex flex-wrap justify-end gap-3"><button id="btn-guardar-carta" onclick="registrarCarta()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-cloud-arrow-up mr-2"></i>Guardar emisión</button><button onclick="descargarPDF()" class="bg-blue-600 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-file-pdf mr-2"></i>Guardar como PDF</button><button onclick="imprimirCarta()" class="bg-slate-800 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-print mr-2"></i>Imprimir</button></div>
+            <div id="acciones-preview" class="no-print p-4 bg-white border flex flex-wrap justify-end gap-3"><button id="btn-guardar-carta" onclick="registrarCarta()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-cloud-arrow-up mr-2"></i>Guardar emisión</button><button onclick="descargarPDF()" class="bg-blue-600 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-file-pdf mr-2"></i>Descargar PDF</button><button onclick="imprimirCarta()" class="bg-slate-800 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-print mr-2"></i>Imprimir</button></div>
           </div>
           </div>
         </section>
@@ -186,33 +204,73 @@
           <input id="buscar" oninput="renderHistorial()" placeholder="Buscar por número, cliente, asunto u obra…" class="w-full bg-white border rounded-lg px-4 py-3">
           <div class="bg-white rounded-xl border overflow-x-auto"><table class="w-full text-sm"><thead class="bg-slate-50 text-left"><tr><th class="p-4">Carta</th><th class="p-4">Fecha</th><th class="p-4">Asunto</th><th class="p-4">Cliente</th><th class="p-4 text-center">Acciones</th></tr></thead><tbody id="tabla-historial"></tbody></table></div>
         </section>
+
+        <section id="view-usuarios" class="hidden space-y-5">
+          <div class="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900"><i class="fa-solid fa-shield-halved mr-2"></i>Las contraseñas están protegidas por Firebase Authentication y nunca se guardan en Firestore. Ningún administrador puede verlas.</div>
+          <div class="bg-white p-5 rounded-xl border">
+            <h3 class="font-bold">Crear trabajador</h3>
+            <form id="form-usuario" class="mt-4 grid gap-4 md:grid-cols-2">
+              <input id="u-nombre" required maxlength="100" class="border rounded-lg px-3 py-2" placeholder="Nombre completo">
+              <input id="u-cargo" required maxlength="100" class="border rounded-lg px-3 py-2" placeholder="Cargo">
+              <input id="u-email" required type="email" autocomplete="off" class="border rounded-lg px-3 py-2" placeholder="Correo electrónico">
+              <div class="relative"><input id="u-password" required type="password" autocomplete="new-password" minlength="8" class="w-full border rounded-lg px-3 py-2 pr-11" placeholder="Contraseña temporal (mín. 8)"><button id="ver-clave-usuario" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"><i class="fa-solid fa-eye"></i></button></div>
+              <select id="u-rol" required class="border rounded-lg px-3 py-2"><option value="operador">Operador de cartas</option><option value="supervisor">Supervisor</option><option value="consulta">Solo consulta</option><option value="admin">Administrador</option></select>
+              <label class="flex items-center gap-2 text-sm"><input id="u-activo" type="checkbox" checked class="h-4 w-4 accent-blue-600">Usuario activo</label>
+              <p class="md:col-span-2 text-xs text-slate-500">Debe contener mayúscula, minúscula, número y al menos 8 caracteres.</p>
+              <div class="md:col-span-2 flex justify-end"><button id="btn-crear-usuario" class="rounded-lg bg-[#0071bc] px-5 py-2 font-bold text-white"><i class="fa-solid fa-user-plus mr-2"></i>Crear usuario</button></div>
+            </form>
+          </div>
+          <div class="bg-white rounded-xl border overflow-x-auto"><table class="w-full text-sm"><thead class="bg-slate-50 text-left"><tr><th class="p-4">Trabajador</th><th class="p-4">Correo</th><th class="p-4">Rol</th><th class="p-4">Estado</th><th class="p-4 text-center">Acciones</th></tr></thead><tbody id="tabla-usuarios"></tbody></table></div>
+        </section>
       </main>
     </div>
   </div>
 
   <script type="module">
-    import{initializeApp}from'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-    import{getFirestore,collection,getDocs,addDoc,deleteDoc,doc,updateDoc,runTransaction,serverTimestamp}from'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+    import{initializeApp,deleteApp}from'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+    import{getFirestore,collection,getDocs,getDoc,setDoc,addDoc,deleteDoc,doc,updateDoc,writeBatch,runTransaction,serverTimestamp}from'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+    import{getAuth,setPersistence,browserLocalPersistence,onAuthStateChanged,signInWithEmailAndPassword,signOut,createUserWithEmailAndPassword,deleteUser,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
     const firebaseConfig={apiKey:'AIzaSyBI7PrSbLUIkQzGlRjBau3mWN3bX_wRWSQ',authDomain:'colvec-gestion.firebaseapp.com',projectId:'colvec-gestion',storageBucket:'colvec-gestion.firebasestorage.app',messagingSenderId:'333697516723',appId:'1:333697516723:web:87d7224a262cc806c9cc6',measurementId:'G-V8CX4Z2QQB'};
-    try{const app=initializeApp(firebaseConfig);window.api={db:getFirestore(app),collection,getDocs,addDoc,deleteDoc,doc,updateDoc,runTransaction,serverTimestamp};await window.iniciarApp()}catch(e){window.errorConexion(e)}
+    try{
+      const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app);
+      await setPersistence(auth,browserLocalPersistence);
+      window.api={app,db,auth,collection,getDocs,getDoc,setDoc,addDoc,deleteDoc,doc,updateDoc,writeBatch,runTransaction,serverTimestamp,
+        entrar:(email,password)=>signInWithEmailAndPassword(auth,email,password),salir:()=>signOut(auth),restablecer:email=>sendPasswordResetEmail(auth,email),
+        crearTrabajador:async({email,password,activo=true,...perfil})=>{const secundaria=initializeApp(firebaseConfig,`crear-${Date.now()}-${Math.random()}`),authSec=getAuth(secundaria);let cred;try{cred=await createUserWithEmailAndPassword(authSec,email,password);await setDoc(doc(db,'usuarios',cred.user.uid),{...perfil,email:email.toLowerCase(),activo:Boolean(activo),creadoEn:serverTimestamp(),creadoPor:auth.currentUser.uid});return cred.user.uid}catch(e){if(cred?.user)try{await deleteUser(cred.user)}catch{}throw e}finally{try{await signOut(authSec)}catch{}await deleteApp(secundaria)}},
+        crearPrimerAdmin:async({nombre,email,password})=>{const secundaria=initializeApp(firebaseConfig,`inicio-${Date.now()}`),authSec=getAuth(secundaria),dbSec=getFirestore(secundaria);let cred;try{cred=await createUserWithEmailAndPassword(authSec,email,password);const lote=writeBatch(dbSec);lote.set(doc(dbSec,'usuarios',cred.user.uid),{nombre,cargo:'Administrador',email:email.toLowerCase(),rol:'admin',activo:true,creadoEn:serverTimestamp(),creadoPor:cred.user.uid});lote.set(doc(dbSec,'config','seguridad'),{primerAdminUid:cred.user.uid,configuradoEn:serverTimestamp()});await lote.commit();return cred.user.uid}catch(e){if(cred?.user)try{await deleteUser(cred.user)}catch{}throw e}finally{try{await signOut(authSec)}catch{}await deleteApp(secundaria)}}
+      };
+      await window.iniciarApp(onAuthStateChanged);
+    }catch(e){window.errorConexion(e)}
   </script>
   <script>
-    const $=id=>document.getElementById(id); let proyectos=[],cartas=[],cartaTemporal=null,editandoId=null,ocupado=false,zoomCarta=1;
-    const tabs={dashboard:['Panel principal','fa-house'],proyectos:['Proyectos y obras','fa-helmet-safety'],cartas:['Generar cartas','fa-file-lines'],historial:['Historial de emisiones','fa-clock-rotate-left']};
-    $('nav').innerHTML=Object.entries(tabs).map(([id,[t,i]])=>`<button data-tab="${id}" class="nav-btn w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800"><i class="fa-solid ${i} w-6"></i>${t}</button>`).join('');
-    document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+    const $=id=>document.getElementById(id);let proyectos=[],cartas=[],usuarios=[],cartaTemporal=null,editandoId=null,ocupado=false,zoomCarta=1,perfilActual=null;
+    const tabs={dashboard:['Panel principal','fa-house'],proyectos:['Proyectos y obras','fa-helmet-safety'],cartas:['Generar cartas','fa-file-lines'],historial:['Historial de emisiones','fa-clock-rotate-left'],usuarios:['Usuarios y permisos','fa-users-gear']};
+    const permisos={admin:['dashboard','proyectos','cartas','historial','usuarios'],supervisor:['dashboard','proyectos','cartas','historial'],operador:['dashboard','cartas','historial'],consulta:['dashboard','historial']};
+    const nombreRol={admin:'Administrador',supervisor:'Supervisor',operador:'Operador de cartas',consulta:'Solo consulta'};
+    const puede=accion=>Boolean(perfilActual&&permisos[perfilActual.rol]?.includes(accion));
+    function construirNavegacion(){const permitidas=permisos[perfilActual?.rol]||[];$('nav').innerHTML=Object.entries(tabs).filter(([id])=>permitidas.includes(id)).map(([id,[t,i]])=>`<button data-tab="${id}" class="nav-btn w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800"><i class="fa-solid ${i} w-6"></i>${t}</button>`).join('');document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab))}
     function toast(msg,tipo='ok'){const d=document.createElement('div');d.className=`toast px-4 py-3 rounded-lg shadow-lg text-sm text-white ${tipo==='error'?'bg-red-600':'bg-slate-800'}`;d.textContent=msg;$('toast-zone').append(d);setTimeout(()=>d.remove(),4000)}
     function setEstado(ok,text){$('estado').className=`text-xs font-semibold px-3 py-1 rounded-full ${ok?'bg-emerald-100 text-emerald-800':'bg-red-100 text-red-800'}`;$('estado').innerHTML=`<i class="fa-solid ${ok?'fa-cloud':'fa-triangle-exclamation'} mr-1"></i>${text}`}
     function abrirMenu(){$('sidebar').classList.remove('-translate-x-full');$('overlay').classList.remove('hidden')} function cerrarMenu(){$('sidebar').classList.add('-translate-x-full');$('overlay').classList.add('hidden')}
-    function switchTab(id){document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));$(`view-${id}`).classList.remove('hidden');$('titulo').textContent=tabs[id][0];document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('bg-blue-600',b.dataset.tab===id));if(id==='cartas')actualizarProyectos();if(id==='historial')renderHistorial();cerrarMenu()}
-    window.iniciarApp=async()=>{setEstado(true,'Conectado');await cargarDatos()}; window.errorConexion=e=>{console.error(e);setEstado(false,'Sin conexión');toast('No se pudo conectar con Firebase. Revisa Internet y las reglas de Firestore.','error')};
+    function switchTab(id){if(!puede(id))return toast('No tienes permiso para ingresar a esta sección.','error');document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));$(`view-${id}`).classList.remove('hidden');$('titulo').textContent=tabs[id][0];document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('bg-blue-600',b.dataset.tab===id));if(id==='cartas')actualizarProyectos();if(id==='historial')renderHistorial();if(id==='usuarios')cargarUsuarios();cerrarMenu()}
+    const mensajeAuth=e=>({'auth/invalid-credential':'Correo o contraseña incorrectos.','auth/invalid-login-credentials':'Correo o contraseña incorrectos.','auth/user-disabled':'Esta cuenta está deshabilitada.','auth/email-already-in-use':'El correo ya está registrado.','auth/weak-password':'La contraseña no cumple la seguridad mínima.','auth/invalid-email':'El correo no es válido.','permission-denied':'No tienes permiso para realizar esta acción.'}[e?.code]||e?.message||'No se pudo completar la operación.');
+    function mostrarErrorLogin(texto=''){$('login-error').textContent=texto;$('login-error').classList.toggle('hidden',!texto)}
+    async function cargarPerfil(user){const snap=await api.getDoc(api.doc(api.db,'usuarios',user.uid));if(!snap.exists())throw new Error('Tu cuenta existe, pero no tiene un perfil autorizado. Solicita acceso al administrador.');const perfil={uid:user.uid,...snap.data()};if(!perfil.activo)throw new Error('Tu usuario está desactivado. Comunícate con el administrador.');return perfil}
+    window.iniciarApp=async onAuthStateChanged=>{try{const cfg=await api.getDoc(api.doc(api.db,'config','seguridad'));$('btn-bootstrap').classList.toggle('hidden',cfg.exists())}catch{}onAuthStateChanged(api.auth,async user=>{if(!user){perfilActual=null;$('app-shell').classList.add('hidden');$('login-screen').classList.remove('hidden');setEstado(false,'Sesión cerrada');return}try{perfilActual=await cargarPerfil(user);$('usuario-actual').textContent=perfilActual.nombre||user.email;$('rol-actual').textContent=nombreRol[perfilActual.rol]||perfilActual.rol;construirNavegacion();$('login-screen').classList.add('hidden');$('app-shell').classList.remove('hidden');aplicarPermisosUI();setEstado(true,'Conectado');await cargarDatos();switchTab('dashboard')}catch(e){mostrarErrorLogin(mensajeAuth(e));await api.salir()}})};
+    window.errorConexion=e=>{console.error(e);setEstado(false,'Sin conexión');toast('No se pudo conectar con Firebase. Revisa Internet y las reglas de seguridad.','error')};
+    $('ver-clave').onclick=()=>{const c=$('login-password');c.type=c.type==='password'?'text':'password';$('ver-clave').firstElementChild.className=`fa-solid ${c.type==='password'?'fa-eye':'fa-eye-slash'}`};
+    $('ver-clave-usuario').onclick=()=>{const c=$('u-password');c.type=c.type==='password'?'text':'password';$('ver-clave-usuario').firstElementChild.className=`fa-solid ${c.type==='password'?'fa-eye':'fa-eye-slash'}`};
+    $('form-login').onsubmit=async e=>{e.preventDefault();mostrarErrorLogin();const b=$('btn-login');b.disabled=true;b.textContent='Ingresando…';try{await api.entrar($('login-email').value.trim().toLowerCase(),$('login-password').value)}catch(x){mostrarErrorLogin(mensajeAuth(x))}finally{b.disabled=false;b.innerHTML='<i class="fa-solid fa-right-to-bracket mr-2"></i>Ingresar'}};
+    $('btn-bootstrap').onclick=async()=>{const email=$('login-email').value.trim().toLowerCase(),password=$('login-password').value;if(!email||!claveSegura(password))return mostrarErrorLogin('La contraseña debe tener 8 caracteres, mayúscula, minúscula y número.');const nombre=prompt('Nombre completo del primer administrador:');if(!nombre?.trim())return;try{await api.crearPrimerAdmin({nombre:nombre.trim(),email,password});$('btn-bootstrap').classList.add('hidden');toast('Administrador inicial creado correctamente.');await api.entrar(email,password)}catch(x){mostrarErrorLogin(mensajeAuth(x))}};
+    window.cerrarSesion=async()=>{await api.salir();$('form-login').reset();mostrarErrorLogin()};
+    function aplicarPermisosUI(){$('form-proyecto').closest('.bg-white').classList.toggle('hidden',!['admin','supervisor'].includes(perfilActual.rol));$('form-carta').classList.toggle('hidden',!puede('cartas'))}
     async function cargarDatos(){try{const [sp,sc]=await Promise.all([api.getDocs(api.collection(api.db,'proyectos')),api.getDocs(api.collection(api.db,'cartas'))]);proyectos=sp.docs.map(d=>({id:d.id,...d.data()}));cartas=sc.docs.map(d=>({id:d.id,...d.data()}));renderProyectos();renderHistorial();actualizarProyectos();$('ultima-carga').textContent=new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});setEstado(true,'Sincronizado')}catch(e){errorConexion(e)}}
     const td=(tr,text,cls='p-4')=>{const e=document.createElement('td');e.className=cls;e.textContent=text||'—';tr.append(e)};
-    function renderProyectos(){const tb=$('tabla-proyectos');tb.replaceChildren();if(!proyectos.length){const tr=tb.insertRow();const c=tr.insertCell();c.colSpan=4;c.className='p-6 text-center text-slate-400';c.textContent='No hay proyectos registrados.'}proyectos.forEach(p=>{const tr=document.createElement('tr');tr.className='border-t';td(tr,p.cliente,'p-4 font-semibold');td(tr,p.direccion);td(tr,p.obraDetallada);const a=tr.insertCell();a.className='p-4 text-center whitespace-nowrap';a.innerHTML=`<button class="text-blue-600 p-2" title="Editar"><i class="fa-solid fa-pen"></i></button><button class="text-red-600 p-2" title="Eliminar"><i class="fa-solid fa-trash"></i></button>`;a.children[0].onclick=()=>editarProyecto(p.id);a.children[1].onclick=()=>eliminarProyecto(p.id);tb.append(tr)});$('stat-proyectos').textContent=proyectos.length}
-    $('form-proyecto').onsubmit=async e=>{e.preventDefault();if(ocupado)return;ocupado=true;const b=$('btn-proyecto');b.disabled=true;try{const data={cliente:$('p-cliente').value.trim(),direccion:$('p-direccion').value.trim(),obraDetallada:$('p-obra').value.trim(),actualizadoEn:api.serverTimestamp()};if(editandoId)await api.updateDoc(api.doc(api.db,'proyectos',editandoId),data);else await api.addDoc(api.collection(api.db,'proyectos'),{...data,creadoEn:api.serverTimestamp()});toast(editandoId?'Proyecto actualizado.':'Proyecto guardado.');cancelarEdicionProyecto();await cargarDatos()}catch(x){errorConexion(x)}finally{ocupado=false;b.disabled=false}};
+    function renderProyectos(){const tb=$('tabla-proyectos'),editable=['admin','supervisor'].includes(perfilActual?.rol);tb.replaceChildren();if(!proyectos.length){const tr=tb.insertRow();const c=tr.insertCell();c.colSpan=4;c.className='p-6 text-center text-slate-400';c.textContent='No hay proyectos registrados.'}proyectos.forEach(p=>{const tr=document.createElement('tr');tr.className='border-t';td(tr,p.cliente,'p-4 font-semibold');td(tr,p.direccion);td(tr,p.obraDetallada);const a=tr.insertCell();a.className='p-4 text-center whitespace-nowrap';if(editable){a.innerHTML=`<button class="text-blue-600 p-2" title="Editar"><i class="fa-solid fa-pen"></i></button><button class="text-red-600 p-2" title="Eliminar"><i class="fa-solid fa-trash"></i></button>`;a.children[0].onclick=()=>editarProyecto(p.id);a.children[1].onclick=()=>eliminarProyecto(p.id)}else a.textContent='Solo lectura';tb.append(tr)});$('stat-proyectos').textContent=proyectos.length}
+    $('form-proyecto').onsubmit=async e=>{e.preventDefault();if(!['admin','supervisor'].includes(perfilActual?.rol))return toast('No tienes permiso para modificar proyectos.','error');if(ocupado)return;ocupado=true;const b=$('btn-proyecto');b.disabled=true;try{const data={cliente:$('p-cliente').value.trim(),direccion:$('p-direccion').value.trim(),obraDetallada:$('p-obra').value.trim(),actualizadoEn:api.serverTimestamp(),actualizadoPor:perfilActual.uid};if(editandoId)await api.updateDoc(api.doc(api.db,'proyectos',editandoId),data);else await api.addDoc(api.collection(api.db,'proyectos'),{...data,creadoEn:api.serverTimestamp(),creadoPor:perfilActual.uid});toast(editandoId?'Proyecto actualizado.':'Proyecto guardado.');cancelarEdicionProyecto();await cargarDatos()}catch(x){errorConexion(x)}finally{ocupado=false;b.disabled=false}};
     function editarProyecto(id){const p=proyectos.find(x=>x.id===id);if(!p)return;editandoId=id;$('p-cliente').value=p.cliente;$('p-direccion').value=p.direccion;$('p-obra').value=p.obraDetallada;$('titulo-form-proyecto').textContent='Editar proyecto';$('cancelar-edicion').classList.remove('hidden');scrollTo({top:0,behavior:'smooth'})}
     function cancelarEdicionProyecto(){editandoId=null;$('form-proyecto').reset();$('titulo-form-proyecto').textContent='Registrar proyecto u obra';$('cancelar-edicion').classList.add('hidden')}
-    async function eliminarProyecto(id){if(!confirm('¿Eliminar este proyecto? Las cartas ya emitidas se conservarán.'))return;try{await api.deleteDoc(api.doc(api.db,'proyectos',id));toast('Proyecto eliminado.');await cargarDatos()}catch(e){errorConexion(e)}}
+    async function eliminarProyecto(id){if(!['admin','supervisor'].includes(perfilActual?.rol))return toast('No tienes permiso para eliminar proyectos.','error');if(!confirm('¿Eliminar este proyecto? Las cartas ya emitidas se conservarán.'))return;try{await api.deleteDoc(api.doc(api.db,'proyectos',id));toast('Proyecto eliminado.');await cargarDatos()}catch(e){errorConexion(e)}}
     function actualizarProyectos(){const s=$('c-proyecto'),v=s.value;s.replaceChildren(new Option('Seleccione un proyecto',''));proyectos.sort((a,b)=>a.cliente.localeCompare(b.cliente)).forEach(p=>s.add(new Option(`${p.cliente} — ${p.obraDetallada.slice(0,55)}`,p.id)));s.value=v}
     const fechaLarga=d=>new Intl.DateTimeFormat('es-PE',{day:'numeric',month:'long',year:'numeric'}).format(d);
     function cuerpoCarta(tipo,p,detalle){const textos={
@@ -231,7 +289,7 @@
       'LEVANTAMIENTO DE OBSERVACIONES':['Es grato dirigirnos a ustedes para saludarlos cordialmente y presentar el LEVANTAMIENTO DE OBSERVACIONES formuladas al expediente técnico del proyecto indicado en la referencia.','Se adjunta la documentación corregida y sustentatoria para su revisión, evaluación y pronunciamiento correspondiente.'],
       'ENTREGA DE DOCUMENTOS':['Es grato dirigirnos a ustedes para saludarlos cordialmente y hacer entrega de la documentación correspondiente al proyecto indicado en la referencia.','Agradeceremos confirmar su recepción y disponer el trámite que corresponda.']
     };const base=[...(textos[tipo]||['Es grato dirigirnos a ustedes para saludarlos cordialmente y comunicar lo señalado en el asunto.'])];if(detalle)base.push(detalle);base.push('Sin otro particular, hacemos propicia la ocasión para expresarles los sentimientos de nuestra especial consideración.');return base}
-    $('form-carta').onsubmit=e=>{e.preventDefault();const p=proyectos.find(x=>x.id===$('c-proyecto').value);if(!p)return toast('Selecciona un proyecto.','error');const ahora=new Date(),tipo=$('c-tipo').value;cartaTemporal={tipo,cliente:p.cliente,direccion:p.direccion,obraNombre:p.obraDetallada,atencion:$('c-atencion').value.trim(),cargo:$('c-cargo').value.trim(),conformidad:$('c-conformidad').value.trim(),expediente:$('c-expediente').value.trim(),enlace:$('c-enlace').value.trim(),detalle:$('c-detalle').value.trim(),fechaISO:ahora.toISOString(),anio:ahora.getFullYear()};mostrarCarta(cartaTemporal,false);$('preview').scrollIntoView({behavior:'smooth'})};
+    $('form-carta').onsubmit=e=>{e.preventDefault();if(!puede('cartas'))return toast('No tienes permiso para generar cartas.','error');const p=proyectos.find(x=>x.id===$('c-proyecto').value);if(!p)return toast('Selecciona un proyecto.','error');const ahora=new Date(),tipo=$('c-tipo').value;cartaTemporal={tipo,cliente:p.cliente,direccion:p.direccion,obraNombre:p.obraDetallada,atencion:$('c-atencion').value.trim(),cargo:$('c-cargo').value.trim(),conformidad:$('c-conformidad').value.trim(),expediente:$('c-expediente').value.trim(),enlace:$('c-enlace').value.trim(),detalle:$('c-detalle').value.trim(),fechaISO:ahora.toISOString(),anio:ahora.getFullYear()};mostrarCarta(cartaTemporal,false);$('preview').scrollIntoView({behavior:'smooth'})};
     function mostrarCarta(c,guardada=true){const d=c.fechaISO?new Date(c.fechaISO):new Date();$('prev-fecha').textContent=`Chimbote, ${fechaLarga(d)}`;$('prev-numero').textContent=c.numero||'CARTA N.° (se asignará al guardar)';$('prev-cliente').textContent=c.cliente;$('prev-direccion').textContent=c.direccion;$('prev-atencion').textContent=c.atencion;$('prev-cargo').textContent=c.cargo;$('prev-asunto').textContent=c.tipo;$('prev-obra').textContent=c.obraNombre;const refs=[];if(c.conformidad)refs.push(`CONFORMIDAD: ${c.conformidad}`);if(c.expediente)refs.push(`EXPEDIENTE: ${c.expediente}`);$('prev-referencia').textContent=refs.join(' · ');$('prev-cuerpo').replaceChildren(...cuerpoCarta(c.tipo,null,c.detalle).map(t=>{const p=document.createElement('p');p.textContent=t;return p}));$('prev-link-wrap').classList.toggle('hidden',!c.enlace);if(c.enlace){$('prev-enlace').href=c.enlace;$('prev-enlace').textContent=c.enlace}$('btn-guardar-carta').classList.toggle('hidden',guardada);$('preview-stage').classList.remove('hidden');$('barra-zoom').classList.remove('hidden');setTimeout(ajustarZoom,50)}
     function aplicarZoom(){zoomCarta=Math.max(.45,Math.min(1.4,zoomCarta));$('preview-sheet').style.transform=`scale(${zoomCarta})`;$('zoom-valor').textContent=`${Math.round(zoomCarta*100)}%`;$('preview-stage').style.height=`${$('preview-sheet').offsetHeight*zoomCarta+36}px`}
     function cambiarZoom(delta){zoomCarta+=delta;aplicarZoom()}
@@ -264,56 +322,46 @@
         ventana.addEventListener('afterprint',()=>ventana.close(),{once:true});
       }catch(e){console.error('Error de impresión:',e);ventana.close();toast('No se pudo preparar la hoja. Inténtalo nuevamente.','error')}
     }
-    function textoPDF(doc,texto,x,y,ancho,interlineado=4,estilo='normal',alinear='left'){
-      doc.setFont('helvetica',estilo);const lineas=doc.splitTextToSize(String(texto||''),ancho);
-      doc.text(lineas,x,y,{align:alinear,baseline:'alphabetic'});return y+lineas.length*interlineado;
-    }
-    async function logoRecortadoPDF(){
-      const img=document.querySelector('.nuevo-logo-wrap img');
-      if(!img)return null;if(!img.complete)await new Promise(r=>{img.onload=img.onerror=r});
-      const sx=Math.round(img.naturalWidth*.0818),sy=Math.round(img.naturalHeight*.4163),sw=Math.round(img.naturalWidth*.8365),sh=Math.round(img.naturalHeight*.168);
-      const canvas=document.createElement('canvas');canvas.width=sw;canvas.height=sh;
-      canvas.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,sw,sh);return canvas.toDataURL('image/png');
-    }
     async function descargarPDF(){
-      if(!window.jspdf?.jsPDF)return toast('No se pudo cargar el generador PDF. Recarga la página.','error');
-      if(!$('preview')||$('preview-stage').classList.contains('hidden'))return toast('Primero genera la vista previa de la carta.','error');
-      const botones=document.querySelectorAll('#acciones-preview button');botones.forEach(b=>b.disabled=true);toast('Generando PDF A4 en alta calidad…');
+      if(typeof html2canvas!=='function'||!window.jspdf?.jsPDF)return toast('No se pudo cargar el generador PDF. Recarga la página.','error');
+      const hoja=$('preview'),contenedor=$('preview-sheet');
+      if(!hoja||!contenedor||$('preview-stage').classList.contains('hidden'))return toast('Primero genera la vista previa de la carta.','error');
+      const botones=document.querySelectorAll('#acciones-preview button');botones.forEach(b=>b.disabled=true);
+      toast('Capturando la vista previa exacta en PDF A4…');
+      const estado={transform:contenedor.style.transform,transition:contenedor.style.transition,border:hoja.style.border,boxShadow:hoja.style.boxShadow};
       try{
-        const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true,putOnlyUsedFonts:true});
+        contenedor.style.setProperty('transition','none','important');
+        contenedor.style.setProperty('transform','none','important');
+        hoja.style.setProperty('border','0','important');
+        hoja.style.setProperty('box-shadow','none','important');
+        if(document.fonts?.ready)await document.fonts.ready;
+        await Promise.all([...hoja.querySelectorAll('img')].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=img.onerror=resolve})));
+        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+        const lienzo=await html2canvas(hoja,{scale:4,useCORS:true,allowTaint:false,backgroundColor:'#ffffff',logging:false,width:hoja.offsetWidth,height:hoja.offsetHeight,scrollX:0,scrollY:-window.scrollY,imageTimeout:20000});
+        const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
         doc.setProperties({title:cartaTemporal?.numero||'Carta COLVEC',subject:cartaTemporal?.tipo||'Carta corporativa',author:'COLVEC C&M S.A.C.',creator:'Sistema de Gestión Documentaria COLVEC'});
-        doc.setFillColor(241,241,241);doc.rect(0,0,210,33,'F');
-        doc.setFillColor(0,113,188);doc.rect(150,0,60,33,'F');doc.triangle(132,33,150,0,150,33,'F');
-        doc.setFillColor(0,36,63);doc.triangle(128,33,145,0,150,0,'F');
-        doc.setFillColor(41,171,226);doc.triangle(145,33,151,0,154,0,'F');
-        const logo=await logoRecortadoPDF();if(logo)doc.addImage(logo,'PNG',13,7,93,18.7,undefined,'FAST');
-        doc.setDrawColor(0,113,188);doc.setLineWidth(.6);doc.line(0,33.5,210,33.5);
-        doc.setLineWidth(.45);doc.setDrawColor(41,171,226);doc.line(208.2,105,208.2,145);doc.setDrawColor(0,113,188);doc.line(208.2,145,208.2,205);doc.setDrawColor(0,36,63);doc.line(208.2,205,208.2,253);
-        doc.setTextColor(0,36,63);doc.setFont('helvetica','bolditalic');doc.setFontSize(7.5);doc.text('www.colvecsac.com',204.5,251,{angle:90});doc.text('RUC: 20610996575',204.5,192,{angle:90});
-        doc.setFont('helvetica','normal');doc.setFontSize(11);doc.circle(204.5,255,1.8);doc.line(202.7,255,206.3,255);doc.line(204.5,253.2,204.5,256.8);
-        let y=43;doc.setTextColor(0,0,0);doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text($('preview').querySelector('.contenido>p')?.textContent||'',105,y,{align:'center'});y+=8;
-        doc.setFontSize(9.1);doc.text($('prev-numero').textContent,24,y);doc.setFont('helvetica','normal');doc.text($('prev-fecha').textContent,191,y,{align:'right'});y+=7;
-        doc.text('Señores:',24,y);y+=4;doc.setFont('helvetica','bold');y=textoPDF(doc,$('prev-cliente').textContent,24,y,160,4,'bold');y=textoPDF(doc,$('prev-direccion').textContent,24,y,160,4,'bold');doc.text('Presente. -',24,y);y+=8;
-        const etiqueta=(t,valor,extra='')=>{doc.setFont('helvetica','normal');doc.text(t,24,y);doc.text(':',50,y);doc.setFont('helvetica','bold');const ls=doc.splitTextToSize(valor,137);doc.text(ls,55,y);y+=ls.length*4;if(extra){doc.setFont('helvetica','normal');const le=doc.splitTextToSize(extra,137);doc.text(le,55,y);y+=le.length*4}y+=1};
-        etiqueta('Atención',$('prev-atencion').textContent,$('prev-cargo').textContent);etiqueta('Asunto',$('prev-asunto').textContent);etiqueta('Referencia',`PROYECTO: “${$('prev-obra').textContent}”`,$('prev-referencia').textContent);y+=3;
-        doc.setFont('helvetica','normal');doc.text('De nuestra especial consideración:',24,y);y+=7;
-        for(const p of $('prev-cuerpo').children){y=textoPDF(doc,p.textContent,24,y,167,4,'normal');y+=2.2}
-        if(!$('prev-link-wrap').classList.contains('hidden')){doc.setFont('helvetica','bold');doc.text('Enlace de descarga:',24,y);y+=4;doc.setTextColor(0,102,204);doc.setFont('helvetica','normal');doc.setFontSize(8);const url=$('prev-enlace').textContent;y=textoPDF(doc,url,24,y,167,3.5,'normal');doc.setTextColor(0,0,0);doc.setFontSize(9.1);y+=2}
-        doc.setFont('helvetica','normal');doc.text('Atentamente,',24,y);y+=12;doc.setFont('helvetica','bold');doc.text('COLVEC C&M',105,y,{align:'center'});y+=12;doc.setLineWidth(.3);doc.setDrawColor(0,0,0);doc.line(76, y,134,y);y+=4;doc.text('Ing. Luis A. Mallma Vega',105,y,{align:'center'});y+=3.3;doc.setFontSize(7);doc.setFont('helvetica','normal');doc.text('GERENTE GENERAL',105,y,{align:'center'});
-        doc.setFillColor(232,232,232);doc.rect(0,273,210,24,'F');doc.setDrawColor(0,113,188);doc.setLineWidth(.5);doc.line(0,273,210,273);doc.setFillColor(0,36,63);doc.triangle(72,273,74,270.3,136,270.3,'F');doc.triangle(136,270.3,138,273,72,273,'F');
-        doc.setDrawColor(0,36,63);doc.setLineWidth(.25);doc.line(64,279,64,294);doc.line(140,279,140,294);
-        doc.setTextColor(0,113,188);doc.setFont('helvetica','bold');doc.setFontSize(7.2);doc.text(['“Comprometidos con la Confiabilidad','y Seguridad Energética”'],32,284,{align:'center'});doc.text(['Central: (043) 590-134 | Cel. 966 502 952','E-mail: gerencia@colvecsac.com'],102,284,{align:'center'});doc.text(['Jr. Elías Aguirre N.° 238, Chimbote','Santa - Áncash'],175,284,{align:'center'});
-        const nombre=(cartaTemporal?.numero||'Carta-COLVEC').replaceAll('/','-').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ._-]+/g,'-');doc.save(`${nombre}.pdf`);toast('PDF A4 descargado correctamente.');
+        doc.addImage(lienzo.toDataURL('image/png'),'PNG',0,0,210,297,undefined,'FAST');
+        const nombre=(cartaTemporal?.numero||'Carta-COLVEC').replaceAll('/','-').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ._-]+/g,'-');
+        doc.save(`${nombre}.pdf`);toast('PDF A4 descargado igual a la vista previa.');
       }catch(e){console.error('Error al crear PDF:',e);toast('No se pudo generar el PDF. Recarga la página e inténtalo nuevamente.','error')}
-      finally{botones.forEach(b=>b.disabled=false)}
-    }
-    function imprimirCarta(){return abrirHojaImpresion('imprimir')}
+      finally{
+        contenedor.style.transform=estado.transform;contenedor.style.transition=estado.transition;
+        hoja.style.border=estado.border;hoja.style.boxShadow=estado.boxShadow;
+        botones.forEach(b=>b.disabled=false);aplicarZoom();
+      }
+    }    function imprimirCarta(){return abrirHojaImpresion('imprimir')}
     async function reservarNumero(anio){const ref=api.doc(api.db,'config','correlativos'),campo=`carta_${anio}`;const maxActual=Math.max(0,...cartas.filter(c=>Number(c.anio||String(c.numero||'').match(/-(\d{4})\//)?.[1])===anio).map(c=>Number(String(c.numero).match(/N\.°\s*(\d+)/)?.[1]||0)));return api.runTransaction(api.db,async tx=>{const s=await tx.get(ref),actual=s.exists()?Number(s.data()[campo]||0):0,n=Math.max(actual,maxActual)+1;tx.set(ref,{[campo]:n},{merge:true});return n})}
-    async function registrarCarta(){if(!cartaTemporal||ocupado)return;ocupado=true;const b=$('btn-guardar-carta');b.disabled=true;b.textContent='Guardando…';try{const n=await reservarNumero(cartaTemporal.anio);cartaTemporal.numero=`CARTA N.° ${String(n).padStart(3,'0')}-${cartaTemporal.anio}/CGCOLV`;await api.addDoc(api.collection(api.db,'cartas'),{...cartaTemporal,creadoEn:api.serverTimestamp()});toast('Carta guardada correctamente.');await cargarDatos();mostrarCarta(cartaTemporal,true)}catch(e){errorConexion(e)}finally{ocupado=false;b.disabled=false;b.innerHTML='<i class="fa-solid fa-cloud-arrow-up mr-2"></i>Guardar emisión'}}
-    function renderHistorial(){const q=($('buscar')?.value||'').toLowerCase(),tb=$('tabla-historial');tb.replaceChildren();const lista=[...cartas].filter(c=>[c.numero,c.tipo,c.cliente,c.obraNombre].join(' ').toLowerCase().includes(q)).sort((a,b)=>String(b.fechaISO||'').localeCompare(String(a.fechaISO||'')));if(!lista.length){const tr=tb.insertRow(),c=tr.insertCell();c.colSpan=5;c.className='p-6 text-center text-slate-400';c.textContent='No se encontraron cartas.'}lista.forEach(c=>{const tr=document.createElement('tr');tr.className='border-t';td(tr,c.numero,'p-4 font-semibold');td(tr,c.fechaISO?fechaLarga(new Date(c.fechaISO)):'—');td(tr,c.tipo);td(tr,c.cliente);const a=tr.insertCell();a.className='p-4 text-center whitespace-nowrap';a.innerHTML='<button class="text-blue-600 p-2" title="Ver"><i class="fa-solid fa-eye"></i></button><button class="text-red-600 p-2" title="Eliminar"><i class="fa-solid fa-trash"></i></button>';a.children[0].onclick=()=>{cartaTemporal=c;switchTab('cartas');mostrarCarta(c,true);$('preview').scrollIntoView({behavior:'smooth'})};a.children[1].onclick=()=>eliminarCarta(c.id);tb.append(tr)});$('stat-cartas').textContent=cartas.filter(c=>Number(c.anio)===new Date().getFullYear()).length}
-    async function eliminarCarta(id){if(!confirm('¿Eliminar definitivamente esta carta del historial?'))return;try{await api.deleteDoc(api.doc(api.db,'cartas',id));toast('Carta eliminada.');await cargarDatos()}catch(e){errorConexion(e)}}
+    async function registrarCarta(){if(!puede('cartas'))return toast('No tienes permiso para emitir cartas.','error');if(!cartaTemporal||ocupado)return;ocupado=true;const b=$('btn-guardar-carta');b.disabled=true;b.textContent='Guardando…';try{const n=await reservarNumero(cartaTemporal.anio);cartaTemporal.numero=`CARTA N.° ${String(n).padStart(3,'0')}-${cartaTemporal.anio}/CGCOLV`;await api.addDoc(api.collection(api.db,'cartas'),{...cartaTemporal,creadoEn:api.serverTimestamp(),creadoPor:perfilActual.uid,creadoPorNombre:perfilActual.nombre});toast('Carta guardada correctamente.');await cargarDatos();mostrarCarta(cartaTemporal,true)}catch(e){errorConexion(e)}finally{ocupado=false;b.disabled=false;b.innerHTML='<i class="fa-solid fa-cloud-arrow-up mr-2"></i>Guardar emisión'}}
+    function renderHistorial(){const q=($('buscar')?.value||'').toLowerCase(),tb=$('tabla-historial');tb.replaceChildren();const lista=[...cartas].filter(c=>[c.numero,c.tipo,c.cliente,c.obraNombre].join(' ').toLowerCase().includes(q)).sort((a,b)=>String(b.fechaISO||'').localeCompare(String(a.fechaISO||'')));if(!lista.length){const tr=tb.insertRow(),c=tr.insertCell();c.colSpan=5;c.className='p-6 text-center text-slate-400';c.textContent='No se encontraron cartas.'}lista.forEach(c=>{const tr=document.createElement('tr');tr.className='border-t';td(tr,c.numero,'p-4 font-semibold');td(tr,c.fechaISO?fechaLarga(new Date(c.fechaISO)):'—');td(tr,c.tipo);td(tr,c.cliente);const a=tr.insertCell();a.className='p-4 text-center whitespace-nowrap';if(puede('cartas')){const ver=document.createElement('button');ver.className='text-blue-600 p-2';ver.title='Ver';ver.innerHTML='<i class="fa-solid fa-eye"></i>';ver.onclick=()=>{cartaTemporal=c;switchTab('cartas');mostrarCarta(c,true);$('preview').scrollIntoView({behavior:'smooth'})};a.append(ver)}if(perfilActual?.rol==='admin'){const borrar=document.createElement('button');borrar.className='text-red-600 p-2';borrar.title='Eliminar';borrar.innerHTML='<i class="fa-solid fa-trash"></i>';borrar.onclick=()=>eliminarCarta(c.id);a.append(borrar)}if(!a.children.length)a.textContent='Solo lectura';tb.append(tr)});$('stat-cartas').textContent=cartas.filter(c=>Number(c.anio)===new Date().getFullYear()).length}
+    async function eliminarCarta(id){if(perfilActual?.rol!=='admin')return toast('Solo un administrador puede eliminar cartas.','error');if(!confirm('¿Eliminar definitivamente esta carta del historial?'))return;try{await api.deleteDoc(api.doc(api.db,'cartas',id));toast('Carta eliminada.');await cargarDatos()}catch(e){errorConexion(e)}}
+    const claveSegura=clave=>clave.length>=8&&/[a-z]/.test(clave)&&/[A-Z]/.test(clave)&&/\d/.test(clave);
+    $('form-usuario').onsubmit=async e=>{e.preventDefault();if(perfilActual?.rol!=='admin')return toast('Solo un administrador puede crear usuarios.','error');const password=$('u-password').value;if(!claveSegura(password))return toast('La contraseña debe tener 8 caracteres, mayúscula, minúscula y número.','error');const b=$('btn-crear-usuario');b.disabled=true;b.textContent='Creando…';try{await api.crearTrabajador({nombre:$('u-nombre').value.trim(),cargo:$('u-cargo').value.trim(),email:$('u-email').value.trim().toLowerCase(),password,rol:$('u-rol').value,activo:$('u-activo').checked});$('form-usuario').reset();$('u-activo').checked=true;toast('Usuario creado correctamente.');await cargarUsuarios()}catch(x){toast(mensajeAuth(x),'error')}finally{b.disabled=false;b.innerHTML='<i class="fa-solid fa-user-plus mr-2"></i>Crear usuario'}};
+    async function cargarUsuarios(){if(perfilActual?.rol!=='admin')return;try{const snap=await api.getDocs(api.collection(api.db,'usuarios'));usuarios=snap.docs.map(d=>({uid:d.id,...d.data()})).sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||'')));renderUsuarios()}catch(x){toast(mensajeAuth(x),'error')}}
+    function renderUsuarios(){const tb=$('tabla-usuarios');tb.replaceChildren();if(!usuarios.length){const tr=tb.insertRow(),c=tr.insertCell();c.colSpan=5;c.className='p-6 text-center text-slate-400';c.textContent='No hay usuarios registrados.';return}usuarios.forEach(u=>{const tr=document.createElement('tr');tr.className=`border-t ${u.activo?'':'fila-inactiva'}`;const persona=tr.insertCell();persona.className='p-4';const n=document.createElement('p');n.className='font-bold';n.textContent=u.nombre||'Sin nombre';const cargo=document.createElement('p');cargo.className='text-xs text-slate-500';cargo.textContent=u.cargo||'Sin cargo';persona.append(n,cargo);td(tr,u.email);const rol=tr.insertCell();rol.className='p-4';if(u.uid===perfilActual.uid){const chip=document.createElement('span');chip.className='chip-rol bg-blue-100 text-blue-800';chip.textContent=nombreRol[u.rol]||u.rol;rol.append(chip)}else{const s=document.createElement('select');s.className='border rounded-lg px-2 py-1 text-xs';Object.entries(nombreRol).forEach(([v,t])=>s.add(new Option(t,v)));s.value=u.rol;s.onchange=()=>cambiarRol(u.uid,s.value);rol.append(s)}td(tr,u.activo?'Activo':'Desactivado',`p-4 font-semibold ${u.activo?'text-emerald-700':'text-red-600'}`);const a=tr.insertCell();a.className='p-4 text-center whitespace-nowrap';if(u.uid===perfilActual.uid){a.textContent='Sesión actual'}else{const estado=document.createElement('button');estado.className=`p-2 ${u.activo?'text-amber-600':'text-emerald-600'}`;estado.title=u.activo?'Desactivar':'Activar';estado.innerHTML=`<i class="fa-solid ${u.activo?'fa-user-lock':'fa-user-check'}"></i>`;estado.onclick=()=>cambiarEstadoUsuario(u.uid,!u.activo);const reset=document.createElement('button');reset.className='p-2 text-blue-600';reset.title='Enviar cambio de contraseña';reset.innerHTML='<i class="fa-solid fa-key"></i>';reset.onclick=()=>enviarCambioClave(u.email);a.append(estado,reset)}tb.append(tr)})}
+    async function cambiarRol(uid,rol){if(perfilActual?.rol!=='admin'||uid===perfilActual.uid)return;try{await api.updateDoc(api.doc(api.db,'usuarios',uid),{rol,actualizadoEn:api.serverTimestamp(),actualizadoPor:perfilActual.uid});toast('Rol actualizado.');await cargarUsuarios()}catch(x){toast(mensajeAuth(x),'error')}}
+    async function cambiarEstadoUsuario(uid,activo){if(perfilActual?.rol!=='admin'||uid===perfilActual.uid)return;if(!confirm(`¿${activo?'Activar':'Desactivar'} este usuario?`))return;try{await api.updateDoc(api.doc(api.db,'usuarios',uid),{activo,actualizadoEn:api.serverTimestamp(),actualizadoPor:perfilActual.uid});toast(activo?'Usuario activado.':'Usuario desactivado.');await cargarUsuarios()}catch(x){toast(mensajeAuth(x),'error')}}
+    async function enviarCambioClave(email){if(!confirm(`¿Enviar un correo para cambiar la contraseña a ${email}?`))return;try{await api.restablecer(email);toast('Correo de cambio de contraseña enviado.')}catch(x){toast(mensajeAuth(x),'error')}}
     function mostrarErrorLogo(img){img.style.display='none';toast('No se encontró logo.svg. Colócalo en la misma carpeta que index.html.','error')}
-    switchTab('dashboard');
   </script>
 </body>
 </html>
