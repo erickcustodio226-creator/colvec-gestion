@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>COLVEC C&M | Gestión Documentaria</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root{--azul:#0071bc;--oscuro:#00243f} .bg-colvec{background:var(--oscuro)} .text-colvec{color:var(--oscuro)}
@@ -17,6 +18,8 @@
     .lateral-datos{position:absolute;right:1.5mm;top:168mm;transform:rotate(-90deg) translateX(100%);transform-origin:right top;white-space:nowrap;font-size:7pt;color:#173b50;font-weight:bold}
     .pie-carta{position:absolute;left:0;right:0;bottom:0;height:23mm;background:linear-gradient(to bottom,#fff 0 13%,#0071bc 13% 16%,#edf7fb 16%);display:grid;grid-template-columns:1.1fr 1.35fr 1.2fr;align-items:center;color:#0071bc;font-size:7pt;font-weight:bold;text-align:center;padding:5mm 10mm 1mm}
     .pie-carta>div+div{border-left:1px solid #0071bc;padding-left:4mm}
+    .preview-stage{overflow:auto;padding:18px;background:#e2e8f0;border-radius:12px}
+    .preview-sheet{transform-origin:top center;transition:transform .2s ease}
     @page{size:A4 portrait;margin:0}
     *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
     @media print{
@@ -24,6 +27,8 @@
       body *{visibility:hidden!important} #preview,#preview *{visibility:visible!important}
       #preview{display:block!important;position:fixed!important;left:0!important;top:0!important;margin:0!important;width:210mm!important;height:297mm!important;min-height:297mm!important;max-width:210mm!important;border:0!important;box-shadow:none!important;overflow:hidden!important}
       #preview .contenido{padding:31mm 19mm 27mm 24mm!important}
+      #preview-sheet{transform:none!important;width:210mm!important;margin:0!important}
+      #preview-stage{display:block!important;padding:0!important;margin:0!important;height:297mm!important;overflow:visible!important;background:#fff!important}
       .no-print{display:none!important}.carta-hoja{padding:0!important}
     }
   </style>
@@ -87,8 +92,15 @@
             <div class="md:col-span-2 flex justify-end"><button class="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold">Generar vista previa</button></div>
           </form>
 
-          <div class="max-w-[210mm] mx-auto">
-            <article id="preview" class="hidden carta-a4 border shadow-lg">
+          <div id="barra-zoom" class="hidden no-print max-w-[210mm] mx-auto mb-2 flex items-center justify-end gap-2">
+            <button type="button" onclick="cambiarZoom(-.1)" class="bg-white border rounded-lg px-3 py-2" title="Alejar"><i class="fa-solid fa-minus"></i></button>
+            <span id="zoom-valor" class="text-sm font-semibold w-14 text-center">100%</span>
+            <button type="button" onclick="cambiarZoom(.1)" class="bg-white border rounded-lg px-3 py-2" title="Acercar"><i class="fa-solid fa-plus"></i></button>
+            <button type="button" onclick="ajustarZoom()" class="bg-white border rounded-lg px-3 py-2 text-sm">Ajustar</button>
+          </div>
+          <div id="preview-stage" class="preview-stage hidden">
+          <div class="max-w-[210mm] mx-auto preview-sheet" id="preview-sheet">
+            <article id="preview" class="carta-a4 border shadow-lg">
               <div class="membrete-forma"></div>
               <header class="absolute top-[3mm] left-[18mm] z-10 flex items-center gap-3">
                 <img src="logo.svg" onerror="mostrarErrorLogo(this)" class="h-[18mm] w-[18mm] object-contain" alt="Logo oficial COLVEC">
@@ -107,7 +119,8 @@
               </div>
               <footer class="pie-carta"><div>“Comprometidos con la Confiabilidad<br>y Seguridad Energética”</div><div>Central: (043) 590 – 134 | Cel. 966 502 952<br>E-mail: gerencia@colvecsac.com</div><div>Jr. Elías Aguirre N.° 238, Chimbote –<br>Santa – Ancash</div></footer>
             </article>
-            <div id="acciones-preview" class="hidden no-print p-4 bg-slate-100 border flex flex-wrap justify-end gap-3"><button id="btn-guardar-carta" onclick="registrarCarta()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-cloud-arrow-up mr-2"></i>Guardar emisión</button><button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-print mr-2"></i>Imprimir / PDF</button></div>
+            <div id="acciones-preview" class="no-print p-4 bg-white border flex flex-wrap justify-end gap-3"><button id="btn-guardar-carta" onclick="registrarCarta()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-cloud-arrow-up mr-2"></i>Guardar emisión</button><button onclick="descargarPDF()" class="bg-blue-600 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-file-pdf mr-2"></i>Descargar PDF</button><button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-print mr-2"></i>Imprimir</button></div>
+          </div>
           </div>
         </section>
 
@@ -126,7 +139,7 @@
     try{const app=initializeApp(firebaseConfig);window.api={db:getFirestore(app),collection,getDocs,addDoc,deleteDoc,doc,updateDoc,runTransaction,serverTimestamp};await window.iniciarApp()}catch(e){window.errorConexion(e)}
   </script>
   <script>
-    const $=id=>document.getElementById(id); let proyectos=[],cartas=[],cartaTemporal=null,editandoId=null,ocupado=false;
+    const $=id=>document.getElementById(id); let proyectos=[],cartas=[],cartaTemporal=null,editandoId=null,ocupado=false,zoomCarta=1;
     const tabs={dashboard:['Panel principal','fa-house'],proyectos:['Proyectos y obras','fa-helmet-safety'],cartas:['Generar cartas','fa-file-lines'],historial:['Historial de emisiones','fa-clock-rotate-left']};
     $('nav').innerHTML=Object.entries(tabs).map(([id,[t,i]])=>`<button data-tab="${id}" class="nav-btn w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800"><i class="fa-solid ${i} w-6"></i>${t}</button>`).join('');
     document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
@@ -161,7 +174,11 @@
       'ENTREGA DE DOCUMENTOS':['Es grato dirigirnos a ustedes para saludarlos cordialmente y hacer entrega de la documentación correspondiente al proyecto indicado en la referencia.','Agradeceremos confirmar su recepción y disponer el trámite que corresponda.']
     };const base=[...(textos[tipo]||['Es grato dirigirnos a ustedes para saludarlos cordialmente y comunicar lo señalado en el asunto.'])];if(detalle)base.push(detalle);base.push('Sin otro particular, hacemos propicia la ocasión para expresarles los sentimientos de nuestra especial consideración.');return base}
     $('form-carta').onsubmit=e=>{e.preventDefault();const p=proyectos.find(x=>x.id===$('c-proyecto').value);if(!p)return toast('Selecciona un proyecto.','error');const ahora=new Date(),tipo=$('c-tipo').value;cartaTemporal={tipo,cliente:p.cliente,direccion:p.direccion,obraNombre:p.obraDetallada,atencion:$('c-atencion').value.trim(),cargo:$('c-cargo').value.trim(),conformidad:$('c-conformidad').value.trim(),expediente:$('c-expediente').value.trim(),enlace:$('c-enlace').value.trim(),detalle:$('c-detalle').value.trim(),fechaISO:ahora.toISOString(),anio:ahora.getFullYear()};mostrarCarta(cartaTemporal,false);$('preview').scrollIntoView({behavior:'smooth'})};
-    function mostrarCarta(c,guardada=true){const d=c.fechaISO?new Date(c.fechaISO):new Date();$('prev-fecha').textContent=`Chimbote, ${fechaLarga(d)}`;$('prev-numero').textContent=c.numero||'CARTA N.° (se asignará al guardar)';$('prev-cliente').textContent=c.cliente;$('prev-direccion').textContent=c.direccion;$('prev-atencion').textContent=c.atencion;$('prev-cargo').textContent=c.cargo;$('prev-asunto').textContent=c.tipo;$('prev-obra').textContent=c.obraNombre;const refs=[];if(c.conformidad)refs.push(`CONFORMIDAD: ${c.conformidad}`);if(c.expediente)refs.push(`EXPEDIENTE: ${c.expediente}`);$('prev-referencia').textContent=refs.join(' · ');$('prev-cuerpo').replaceChildren(...cuerpoCarta(c.tipo,null,c.detalle).map(t=>{const p=document.createElement('p');p.textContent=t;return p}));$('prev-link-wrap').classList.toggle('hidden',!c.enlace);if(c.enlace){$('prev-enlace').href=c.enlace;$('prev-enlace').textContent=c.enlace}$('btn-guardar-carta').classList.toggle('hidden',guardada);$('preview').classList.remove('hidden');$('acciones-preview').classList.remove('hidden')}
+    function mostrarCarta(c,guardada=true){const d=c.fechaISO?new Date(c.fechaISO):new Date();$('prev-fecha').textContent=`Chimbote, ${fechaLarga(d)}`;$('prev-numero').textContent=c.numero||'CARTA N.° (se asignará al guardar)';$('prev-cliente').textContent=c.cliente;$('prev-direccion').textContent=c.direccion;$('prev-atencion').textContent=c.atencion;$('prev-cargo').textContent=c.cargo;$('prev-asunto').textContent=c.tipo;$('prev-obra').textContent=c.obraNombre;const refs=[];if(c.conformidad)refs.push(`CONFORMIDAD: ${c.conformidad}`);if(c.expediente)refs.push(`EXPEDIENTE: ${c.expediente}`);$('prev-referencia').textContent=refs.join(' · ');$('prev-cuerpo').replaceChildren(...cuerpoCarta(c.tipo,null,c.detalle).map(t=>{const p=document.createElement('p');p.textContent=t;return p}));$('prev-link-wrap').classList.toggle('hidden',!c.enlace);if(c.enlace){$('prev-enlace').href=c.enlace;$('prev-enlace').textContent=c.enlace}$('btn-guardar-carta').classList.toggle('hidden',guardada);$('preview-stage').classList.remove('hidden');$('barra-zoom').classList.remove('hidden');setTimeout(ajustarZoom,50)}
+    function aplicarZoom(){zoomCarta=Math.max(.45,Math.min(1.4,zoomCarta));$('preview-sheet').style.transform=`scale(${zoomCarta})`;$('zoom-valor').textContent=`${Math.round(zoomCarta*100)}%`;$('preview-stage').style.height=`${$('preview-sheet').offsetHeight*zoomCarta+36}px`}
+    function cambiarZoom(delta){zoomCarta+=delta;aplicarZoom()}
+    function ajustarZoom(){const disponible=$('preview-stage').clientWidth-36,ancho=$('preview-sheet').offsetWidth;zoomCarta=Math.min(1,disponible/ancho);aplicarZoom()}
+    async function descargarPDF(){if(typeof html2pdf==='undefined')return toast('No se pudo cargar el generador PDF. Revisa tu conexión.','error');const nombre=(cartaTemporal?.numero||'Carta-COLVEC').replaceAll('/','-').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ._-]+/g,'-');toast('Generando PDF…');const opciones={margin:0,filename:`${nombre}.pdf`,image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['avoid-all']}};try{await html2pdf().set(opciones).from($('preview')).save();toast('PDF descargado correctamente.')}catch(e){console.error(e);toast('No se pudo generar el PDF.','error')}}
     async function reservarNumero(anio){const ref=api.doc(api.db,'config','correlativos'),campo=`carta_${anio}`;const maxActual=Math.max(0,...cartas.filter(c=>Number(c.anio||String(c.numero||'').match(/-(\d{4})\//)?.[1])===anio).map(c=>Number(String(c.numero).match(/N\.°\s*(\d+)/)?.[1]||0)));return api.runTransaction(api.db,async tx=>{const s=await tx.get(ref),actual=s.exists()?Number(s.data()[campo]||0):0,n=Math.max(actual,maxActual)+1;tx.set(ref,{[campo]:n},{merge:true});return n})}
     async function registrarCarta(){if(!cartaTemporal||ocupado)return;ocupado=true;const b=$('btn-guardar-carta');b.disabled=true;b.textContent='Guardando…';try{const n=await reservarNumero(cartaTemporal.anio);cartaTemporal.numero=`CARTA N.° ${String(n).padStart(3,'0')}-${cartaTemporal.anio}/CGCOLV`;await api.addDoc(api.collection(api.db,'cartas'),{...cartaTemporal,creadoEn:api.serverTimestamp()});toast('Carta guardada correctamente.');await cargarDatos();mostrarCarta(cartaTemporal,true)}catch(e){errorConexion(e)}finally{ocupado=false;b.disabled=false;b.innerHTML='<i class="fa-solid fa-cloud-arrow-up mr-2"></i>Guardar emisión'}}
     function renderHistorial(){const q=($('buscar')?.value||'').toLowerCase(),tb=$('tabla-historial');tb.replaceChildren();const lista=[...cartas].filter(c=>[c.numero,c.tipo,c.cliente,c.obraNombre].join(' ').toLowerCase().includes(q)).sort((a,b)=>String(b.fechaISO||'').localeCompare(String(a.fechaISO||'')));if(!lista.length){const tr=tb.insertRow(),c=tr.insertCell();c.colSpan=5;c.className='p-6 text-center text-slate-400';c.textContent='No se encontraron cartas.'}lista.forEach(c=>{const tr=document.createElement('tr');tr.className='border-t';td(tr,c.numero,'p-4 font-semibold');td(tr,c.fechaISO?fechaLarga(new Date(c.fechaISO)):'—');td(tr,c.tipo);td(tr,c.cliente);const a=tr.insertCell();a.className='p-4 text-center whitespace-nowrap';a.innerHTML='<button class="text-blue-600 p-2" title="Ver"><i class="fa-solid fa-eye"></i></button><button class="text-red-600 p-2" title="Eliminar"><i class="fa-solid fa-trash"></i></button>';a.children[0].onclick=()=>{cartaTemporal=c;switchTab('cartas');mostrarCarta(c,true);$('preview').scrollIntoView({behavior:'smooth'})};a.children[1].onclick=()=>eliminarCarta(c.id);tb.append(tr)});$('stat-cartas').textContent=cartas.filter(c=>Number(c.anio)===new Date().getFullYear()).length}
