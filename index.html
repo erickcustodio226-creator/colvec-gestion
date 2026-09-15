@@ -267,28 +267,31 @@
     }
     async function descargarPDF(){
       if(typeof html2canvas!=='function'||!window.jspdf?.jsPDF)return toast('No se pudo cargar el generador PDF. Recarga la página.','error');
-      const hoja=$('preview');
-      if(!hoja||$('preview-stage').classList.contains('hidden'))return toast('Primero genera la vista previa de la carta.','error');
+      const hoja=$('preview'),contenedor=$('preview-sheet');
+      if(!hoja||!contenedor||$('preview-stage').classList.contains('hidden'))return toast('Primero genera la vista previa de la carta.','error');
       const botones=document.querySelectorAll('#acciones-preview button');botones.forEach(b=>b.disabled=true);
-      toast('Preparando la misma vista previa en PDF A4…');let soporte=null;
+      toast('Capturando la vista previa exacta en PDF A4…');
+      const estado={transform:contenedor.style.transform,transition:contenedor.style.transition,border:hoja.style.border,boxShadow:hoja.style.boxShadow};
       try{
-        soporte=document.createElement('div');soporte.setAttribute('aria-hidden','true');
-        soporte.style.cssText='position:fixed;left:-12000px;top:0;width:210mm;height:297mm;margin:0;padding:0;background:#fff;overflow:hidden;z-index:-99999';
-        const copia=hoja.cloneNode(true);
-        for(const [prop,val] of Object.entries({display:'block',position:'relative',inset:'auto',margin:'0',width:'210mm',height:'297mm','min-height':'297mm','max-height':'297mm','max-width':'210mm',transform:'none','box-shadow':'none',border:'0',overflow:'hidden'}))copia.style.setProperty(prop,val,'important');
-        soporte.appendChild(copia);document.body.appendChild(soporte);
+        contenedor.style.setProperty('transition','none','important');
+        contenedor.style.setProperty('transform','none','important');
+        hoja.style.setProperty('border','0','important');
+        hoja.style.setProperty('box-shadow','none','important');
         if(document.fonts?.ready)await document.fonts.ready;
-        await Promise.all([...copia.querySelectorAll('img')].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=img.onerror=resolve})));
+        await Promise.all([...hoja.querySelectorAll('img')].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=img.onerror=resolve})));
         await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-        const ancho=copia.offsetWidth,alto=copia.offsetHeight;
-        const lienzo=await html2canvas(copia,{scale:4,useCORS:true,allowTaint:false,backgroundColor:'#ffffff',logging:false,width:ancho,height:alto,windowWidth:ancho,windowHeight:alto,scrollX:0,scrollY:0,imageTimeout:20000});
+        const lienzo=await html2canvas(hoja,{scale:4,useCORS:true,allowTaint:false,backgroundColor:'#ffffff',logging:false,width:hoja.offsetWidth,height:hoja.offsetHeight,scrollX:0,scrollY:-window.scrollY,imageTimeout:20000});
         const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
         doc.setProperties({title:cartaTemporal?.numero||'Carta COLVEC',subject:cartaTemporal?.tipo||'Carta corporativa',author:'COLVEC C&M S.A.C.',creator:'Sistema de Gestión Documentaria COLVEC'});
         doc.addImage(lienzo.toDataURL('image/png'),'PNG',0,0,210,297,undefined,'FAST');
         const nombre=(cartaTemporal?.numero||'Carta-COLVEC').replaceAll('/','-').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ._-]+/g,'-');
-        doc.save(`${nombre}.pdf`);toast('PDF A4 descargado en alta calidad.');
+        doc.save(`${nombre}.pdf`);toast('PDF A4 descargado igual a la vista previa.');
       }catch(e){console.error('Error al crear PDF:',e);toast('No se pudo generar el PDF. Recarga la página e inténtalo nuevamente.','error')}
-      finally{soporte?.remove();botones.forEach(b=>b.disabled=false)}
+      finally{
+        contenedor.style.transform=estado.transform;contenedor.style.transition=estado.transition;
+        hoja.style.border=estado.border;hoja.style.boxShadow=estado.boxShadow;
+        botones.forEach(b=>b.disabled=false);aplicarZoom();
+      }
     }    function imprimirCarta(){return abrirHojaImpresion('imprimir')}
     async function reservarNumero(anio){const ref=api.doc(api.db,'config','correlativos'),campo=`carta_${anio}`;const maxActual=Math.max(0,...cartas.filter(c=>Number(c.anio||String(c.numero||'').match(/-(\d{4})\//)?.[1])===anio).map(c=>Number(String(c.numero).match(/N\.°\s*(\d+)/)?.[1]||0)));return api.runTransaction(api.db,async tx=>{const s=await tx.get(ref),actual=s.exists()?Number(s.data()[campo]||0):0,n=Math.max(actual,maxActual)+1;tx.set(ref,{[campo]:n},{merge:true});return n})}
     async function registrarCarta(){if(!cartaTemporal||ocupado)return;ocupado=true;const b=$('btn-guardar-carta');b.disabled=true;b.textContent='Guardando…';try{const n=await reservarNumero(cartaTemporal.anio);cartaTemporal.numero=`CARTA N.° ${String(n).padStart(3,'0')}-${cartaTemporal.anio}/CGCOLV`;await api.addDoc(api.collection(api.db,'cartas'),{...cartaTemporal,creadoEn:api.serverTimestamp()});toast('Carta guardada correctamente.');await cargarDatos();mostrarCarta(cartaTemporal,true)}catch(e){errorConexion(e)}finally{ocupado=false;b.disabled=false;b.innerHTML='<i class="fa-solid fa-cloud-arrow-up mr-2"></i>Guardar emisión'}}
