@@ -30,10 +30,17 @@
     .carta-a4{width:min(100%,210mm);min-height:297mm;position:relative;background:#fff;overflow:hidden;font-family:"Magistral Book",Arial,sans-serif;color:#111}
     .carta-a4 .contenido{padding:31mm 19mm 27mm 24mm;font-size:9.1pt;line-height:1.22}
     .membrete-forma{position:absolute;left:0;right:0;top:0;height:25mm;background:linear-gradient(135deg,#e6e6e6 0 58%,#00243f 58% 62%,#0071bc 62%)}
-    .lateral-forma{position:absolute;right:0;top:83mm;bottom:24mm;width:9mm;background:linear-gradient(160deg,transparent 0 43%,#e6e6e6 43% 51%,#29abe2 51% 59%,#0071bc 59% 67%,transparent 67%)}
-    .lateral-datos{position:absolute;z-index:5;right:1.7mm;top:111mm;height:74mm;writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-size:7pt;line-height:1;color:#00243f;font-weight:bold;display:flex;align-items:center;justify-content:center;gap:8mm}
-    .pie-carta{position:absolute;left:0;right:0;bottom:0;height:23mm;background:linear-gradient(to bottom,#fff 0 13%,#0071bc 13% 16%,#edf7fb 16%);display:grid;grid-template-columns:1.1fr 1.35fr 1.2fr;align-items:center;color:#0071bc;font-size:7pt;font-weight:bold;text-align:center;padding:5mm 10mm 1mm}
-    .pie-carta>div+div{border-left:1px solid #0071bc;padding-left:4mm}
+    .lateral-panel{position:absolute;z-index:2;right:0;top:25mm;bottom:23mm;width:10.5mm;background:#e6e6e6}
+    .lateral-forma{position:absolute;z-index:3;right:0;top:88mm;width:10.5mm;height:62mm;overflow:hidden}
+    .lateral-forma span{position:absolute;left:0;width:100%;height:25mm;clip-path:polygon(100% 0,100% 78%,0 100%,0 30%)}
+    .lateral-forma .b1{top:0;background:linear-gradient(180deg,#e6e6e6,#9bdcf2)}
+    .lateral-forma .b2{top:15mm;background:linear-gradient(180deg,#29abe2,#1598d0)}
+    .lateral-forma .b3{top:30mm;background:linear-gradient(180deg,#0071bc,#005e9d)}
+    .lateral-datos{position:absolute;z-index:5;right:1.8mm;bottom:28mm;height:94mm;writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-size:7pt;line-height:1;color:#00243f;font-weight:bold;display:flex;align-items:center;justify-content:flex-start;gap:8mm}
+    .lateral-datos span{display:flex;align-items:center;gap:2mm}.lateral-datos i{font-size:9pt;color:#00243f}
+    .pie-carta{position:absolute;z-index:6;left:0;right:0;bottom:0;height:23mm;background:linear-gradient(to bottom,#fff 0 9%,#e6e6e6 9%);display:grid;grid-template-columns:1.1fr 1.35fr 1.2fr;align-items:center;color:#0071bc;font-size:7pt;font-weight:bold;text-align:center;padding:5mm 10mm 1mm}
+    .pie-carta:before{content:"";position:absolute;top:0;left:26%;right:26%;height:3mm;background:#00243f;clip-path:polygon(3% 0,97% 0,100% 100%,0 100%)}
+    .pie-carta>div{padding:0 4mm}.pie-carta>div+div{border-left:1px solid #00243f}
     .preview-stage{overflow:auto;padding:18px;background:#e2e8f0;border-radius:12px}
     .preview-sheet{transform-origin:top center;transition:transform .2s ease}
     @page{size:A4 portrait;margin:0}
@@ -122,7 +129,7 @@
                 <img src="logo.svg" onerror="mostrarErrorLogo(this)" class="h-[18mm] w-[18mm] object-contain" alt="Logo oficial COLVEC">
                 <div><h1 class="marca-titulo text-[20pt] leading-none font-black text-colvec tracking-wide">COLVEC C&M</h1><p class="marca-texto text-[6.5pt] font-bold mt-1">Ingeniería, Consultoría y Servicios Eléctricos</p></div>
               </header>
-              <div class="lateral-forma"></div><div class="lateral-datos"><span>● www.colvecsac.com</span><span>❖ RUC: 20610996575</span></div>
+              <div class="lateral-panel"></div><div class="lateral-forma"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div><div class="lateral-datos"><span><i class="fa-solid fa-globe"></i>www.colvecsac.com</span><span><i class="fa-solid fa-building"></i>RUC: 20610996575</span></div>
               <div class="contenido space-y-[3.2mm]">
                 <p class="text-center font-bold text-[8pt]">“AÑO DE LA ESPERANZA Y EL FORTALECIMIENTO DE LA DEMOCRACIA”</p>
                 <div class="grid grid-cols-2 items-end"><p id="prev-numero" class="font-bold underline"></p><p id="prev-fecha" class="text-right"></p></div>
@@ -131,9 +138,9 @@
                 <p>De nuestra especial consideración:</p>
                 <div id="prev-cuerpo" class="space-y-[2.5mm] text-justify"></div>
                 <div id="prev-link-wrap" class="hidden"><b>Enlace de descarga:</b><br><a id="prev-enlace" class="text-blue-600 underline break-all" target="_blank" rel="noopener noreferrer"></a></div>
-                <div><p>Atentamente,</p><div class="w-[52mm] text-center mt-[10mm]"><p class="font-black text-[8pt]">COLVEC C&M</p><p class="font-bold border-t border-black pt-1 mt-[7mm]">Ing. Luis A. Mallma Vega</p><p class="text-[7pt]">GERENTE GENERAL</p></div></div>
+                <div><p>Atentamente,</p><div class="w-[58mm] mx-auto text-center mt-[7mm]"><p class="marca-titulo font-black text-[8pt]">COLVEC C&M</p><div class="h-[8mm]"></div><p class="font-bold border-t border-black pt-1">Ing. Luis A. Mallma Vega</p><p class="text-[7pt]">GERENTE GENERAL</p></div></div>
               </div>
-              <footer class="pie-carta"><div>“Comprometidos con la Confiabilidad<br>y Seguridad Energética”</div><div>Central: (043) 590 – 134 | Cel. 966 502 952<br>E-mail: gerencia@colvecsac.com</div><div>Jr. Elías Aguirre N.° 238, Chimbote –<br>Santa – Ancash</div></footer>
+              <footer class="pie-carta"><div><i class="fa-solid fa-bolt mr-1"></i>“Comprometidos con la Confiabilidad<br>y Seguridad Energética”</div><div><i class="fa-solid fa-phone mr-1"></i>Central: (043) 590 – 134 | Cel. 966 502 952<br><i class="fa-solid fa-envelope mr-1"></i>E-mail: gerencia@colvecsac.com</div><div><i class="fa-solid fa-location-dot mr-1"></i>Jr. Elías Aguirre N.° 238, Chimbote –<br>Santa – Ancash</div></footer>
             </article>
             <div id="acciones-preview" class="no-print p-4 bg-white border flex flex-wrap justify-end gap-3"><button id="btn-guardar-carta" onclick="registrarCarta()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-cloud-arrow-up mr-2"></i>Guardar emisión</button><button onclick="descargarPDF()" class="bg-blue-600 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-file-pdf mr-2"></i>Descargar PDF</button><button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-print mr-2"></i>Imprimir</button></div>
           </div>
