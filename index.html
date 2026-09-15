@@ -230,7 +230,7 @@
     import{initializeApp,deleteApp}from'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
     import{getFirestore,collection,getDocs,getDoc,setDoc,addDoc,deleteDoc,doc,updateDoc,writeBatch,runTransaction,serverTimestamp}from'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
     import{getAuth,setPersistence,browserLocalPersistence,onAuthStateChanged,signInWithEmailAndPassword,signOut,createUserWithEmailAndPassword,deleteUser,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-    const firebaseConfig={apiKey:'AIzaSyBI7PrSbLUIkQzGlRjBau3mWN3bX_wRWSQ',authDomain:'colvec-gestion.firebaseapp.com',projectId:'colvec-gestion',storageBucket:'colvec-gestion.firebasestorage.app',messagingSenderId:'333697516723',appId:'1:333697516723:web:87d7224a262cc806c9cc6',measurementId:'G-V8CX4Z2QQB'};
+    const firebaseConfig={apiKey:'AIzaSyBI7PrSbLUIkQzGlRJBau3mWN3bX_wRWSQ',authDomain:'colvec-gestion.firebaseapp.com',projectId:'colvec-gestion',storageBucket:'colvec-gestion.firebasestorage.app',messagingSenderId:'333697516723',appId:'1:333697516723:web:87d7224a262cc806c9cc6',measurementId:'G-V8CX4Z2QQB'};
     try{
       const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app);
       await setPersistence(auth,browserLocalPersistence);
