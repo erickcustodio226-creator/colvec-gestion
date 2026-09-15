@@ -40,10 +40,13 @@
     /* Ajuste final: el arte llega exactamente a los bordes del A4. */
     .membrete-vector{left:0!important;top:0!important;width:210mm!important;height:31.74mm!important}
     .lateral-vector{right:0!important;top:140mm!important;width:9.88mm!important;height:149.55mm!important}
+    .lateral-vector{right:0!important;top:140mm!important;width:9.42mm!important;height:142.43mm!important;border-right:.18mm solid #b7b7b7}
     .pie-vector{left:0!important;right:0!important;bottom:0!important;width:210mm!important;height:21.86mm!important}
     /* Refuerzo vectorial del símbolo web para pantalla, impresión y PDF. */
     #preview::after{content:"";position:absolute;z-index:10;right:2.8mm;bottom:34.2mm;width:4.2mm;height:4.2mm;border-radius:50%;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300243f' stroke-width='2.1' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c3 3 4 6 4 9s-1 6-4 9c-3-3-4-6-4-9s1-6 4-9z'/%3E%3C/svg%3E") center/3.8mm 3.8mm no-repeat}
     .preview-stage{overflow:auto;padding:18px;background:#e2e8f0;border-radius:12px}
+    #preview::after{content:none}
+    .preview-stage{overflow:auto;padding:18px;background:#e5e5e5;border-radius:12px}
     .preview-sheet{transform-origin:top center;transition:transform .2s ease}
     @page{size:A4 portrait;margin:0}
     *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
