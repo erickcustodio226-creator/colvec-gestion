@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>COLVEC C&M | Gestión Documentaria</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root{--azul:#0071bc;--oscuro:#00243f;--gris:#e6e6e6;--celeste:#29abe2} .bg-colvec{background:var(--oscuro)} .text-colvec{color:var(--oscuro)}
@@ -263,7 +264,49 @@
         ventana.addEventListener('afterprint',()=>ventana.close(),{once:true});
       }catch(e){console.error('Error de impresión:',e);ventana.close();toast('No se pudo preparar la hoja. Inténtalo nuevamente.','error')}
     }
-    function descargarPDF(){return abrirHojaImpresion('pdf')}
+    function textoPDF(doc,texto,x,y,ancho,interlineado=4,estilo='normal',alinear='left'){
+      doc.setFont('helvetica',estilo);const lineas=doc.splitTextToSize(String(texto||''),ancho);
+      doc.text(lineas,x,y,{align:alinear,baseline:'alphabetic'});return y+lineas.length*interlineado;
+    }
+    async function logoRecortadoPDF(){
+      const img=document.querySelector('.nuevo-logo-wrap img');
+      if(!img)return null;if(!img.complete)await new Promise(r=>{img.onload=img.onerror=r});
+      const sx=Math.round(img.naturalWidth*.0818),sy=Math.round(img.naturalHeight*.4163),sw=Math.round(img.naturalWidth*.8365),sh=Math.round(img.naturalHeight*.168);
+      const canvas=document.createElement('canvas');canvas.width=sw;canvas.height=sh;
+      canvas.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,sw,sh);return canvas.toDataURL('image/png');
+    }
+    async function descargarPDF(){
+      if(!window.jspdf?.jsPDF)return toast('No se pudo cargar el generador PDF. Recarga la página.','error');
+      if(!$('preview')||$('preview-stage').classList.contains('hidden'))return toast('Primero genera la vista previa de la carta.','error');
+      const botones=document.querySelectorAll('#acciones-preview button');botones.forEach(b=>b.disabled=true);toast('Generando PDF A4 en alta calidad…');
+      try{
+        const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true,putOnlyUsedFonts:true});
+        doc.setProperties({title:cartaTemporal?.numero||'Carta COLVEC',subject:cartaTemporal?.tipo||'Carta corporativa',author:'COLVEC C&M S.A.C.',creator:'Sistema de Gestión Documentaria COLVEC'});
+        doc.setFillColor(241,241,241);doc.rect(0,0,210,33,'F');
+        doc.setFillColor(0,113,188);doc.rect(150,0,60,33,'F');doc.triangle(132,33,150,0,150,33,'F');
+        doc.setFillColor(0,36,63);doc.triangle(128,33,145,0,150,0,'F');
+        doc.setFillColor(41,171,226);doc.triangle(145,33,151,0,154,0,'F');
+        const logo=await logoRecortadoPDF();if(logo)doc.addImage(logo,'PNG',13,7,93,18.7,undefined,'FAST');
+        doc.setDrawColor(0,113,188);doc.setLineWidth(.6);doc.line(0,33.5,210,33.5);
+        doc.setLineWidth(.45);doc.setDrawColor(41,171,226);doc.line(208.2,105,208.2,145);doc.setDrawColor(0,113,188);doc.line(208.2,145,208.2,205);doc.setDrawColor(0,36,63);doc.line(208.2,205,208.2,253);
+        doc.setTextColor(0,36,63);doc.setFont('helvetica','bolditalic');doc.setFontSize(7.5);doc.text('www.colvecsac.com',204.5,251,{angle:90});doc.text('RUC: 20610996575',204.5,192,{angle:90});
+        doc.setFont('helvetica','normal');doc.setFontSize(11);doc.circle(204.5,255,1.8);doc.line(202.7,255,206.3,255);doc.line(204.5,253.2,204.5,256.8);
+        let y=43;doc.setTextColor(0,0,0);doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text($('preview').querySelector('.contenido>p')?.textContent||'',105,y,{align:'center'});y+=8;
+        doc.setFontSize(9.1);doc.text($('prev-numero').textContent,24,y);doc.setFont('helvetica','normal');doc.text($('prev-fecha').textContent,191,y,{align:'right'});y+=7;
+        doc.text('Señores:',24,y);y+=4;doc.setFont('helvetica','bold');y=textoPDF(doc,$('prev-cliente').textContent,24,y,160,4,'bold');y=textoPDF(doc,$('prev-direccion').textContent,24,y,160,4,'bold');doc.text('Presente. -',24,y);y+=8;
+        const etiqueta=(t,valor,extra='')=>{doc.setFont('helvetica','normal');doc.text(t,24,y);doc.text(':',50,y);doc.setFont('helvetica','bold');const ls=doc.splitTextToSize(valor,137);doc.text(ls,55,y);y+=ls.length*4;if(extra){doc.setFont('helvetica','normal');const le=doc.splitTextToSize(extra,137);doc.text(le,55,y);y+=le.length*4}y+=1};
+        etiqueta('Atención',$('prev-atencion').textContent,$('prev-cargo').textContent);etiqueta('Asunto',$('prev-asunto').textContent);etiqueta('Referencia',`PROYECTO: “${$('prev-obra').textContent}”`,$('prev-referencia').textContent);y+=3;
+        doc.setFont('helvetica','normal');doc.text('De nuestra especial consideración:',24,y);y+=7;
+        for(const p of $('prev-cuerpo').children){y=textoPDF(doc,p.textContent,24,y,167,4,'normal');y+=2.2}
+        if(!$('prev-link-wrap').classList.contains('hidden')){doc.setFont('helvetica','bold');doc.text('Enlace de descarga:',24,y);y+=4;doc.setTextColor(0,102,204);doc.setFont('helvetica','normal');doc.setFontSize(8);const url=$('prev-enlace').textContent;y=textoPDF(doc,url,24,y,167,3.5,'normal');doc.setTextColor(0,0,0);doc.setFontSize(9.1);y+=2}
+        doc.setFont('helvetica','normal');doc.text('Atentamente,',24,y);y+=12;doc.setFont('helvetica','bold');doc.text('COLVEC C&M',105,y,{align:'center'});y+=12;doc.setLineWidth(.3);doc.setDrawColor(0,0,0);doc.line(76, y,134,y);y+=4;doc.text('Ing. Luis A. Mallma Vega',105,y,{align:'center'});y+=3.3;doc.setFontSize(7);doc.setFont('helvetica','normal');doc.text('GERENTE GENERAL',105,y,{align:'center'});
+        doc.setFillColor(232,232,232);doc.rect(0,273,210,24,'F');doc.setDrawColor(0,113,188);doc.setLineWidth(.5);doc.line(0,273,210,273);doc.setFillColor(0,36,63);doc.triangle(72,273,74,270.3,136,270.3,'F');doc.triangle(136,270.3,138,273,72,273,'F');
+        doc.setDrawColor(0,36,63);doc.setLineWidth(.25);doc.line(64,279,64,294);doc.line(140,279,140,294);
+        doc.setTextColor(0,113,188);doc.setFont('helvetica','bold');doc.setFontSize(7.2);doc.text(['“Comprometidos con la Confiabilidad','y Seguridad Energética”'],32,284,{align:'center'});doc.text(['Central: (043) 590-134 | Cel. 966 502 952','E-mail: gerencia@colvecsac.com'],102,284,{align:'center'});doc.text(['Jr. Elías Aguirre N.° 238, Chimbote','Santa - Áncash'],175,284,{align:'center'});
+        const nombre=(cartaTemporal?.numero||'Carta-COLVEC').replaceAll('/','-').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ._-]+/g,'-');doc.save(`${nombre}.pdf`);toast('PDF A4 descargado correctamente.');
+      }catch(e){console.error('Error al crear PDF:',e);toast('No se pudo generar el PDF. Recarga la página e inténtalo nuevamente.','error')}
+      finally{botones.forEach(b=>b.disabled=false)}
+    }
     function imprimirCarta(){return abrirHojaImpresion('imprimir')}
     async function reservarNumero(anio){const ref=api.doc(api.db,'config','correlativos'),campo=`carta_${anio}`;const maxActual=Math.max(0,...cartas.filter(c=>Number(c.anio||String(c.numero||'').match(/-(\d{4})\//)?.[1])===anio).map(c=>Number(String(c.numero).match(/N\.°\s*(\d+)/)?.[1]||0)));return api.runTransaction(api.db,async tx=>{const s=await tx.get(ref),actual=s.exists()?Number(s.data()[campo]||0):0,n=Math.max(actual,maxActual)+1;tx.set(ref,{[campo]:n},{merge:true});return n})}
     async function registrarCarta(){if(!cartaTemporal||ocupado)return;ocupado=true;const b=$('btn-guardar-carta');b.disabled=true;b.textContent='Guardando…';try{const n=await reservarNumero(cartaTemporal.anio);cartaTemporal.numero=`CARTA N.° ${String(n).padStart(3,'0')}-${cartaTemporal.anio}/CGCOLV`;await api.addDoc(api.collection(api.db,'cartas'),{...cartaTemporal,creadoEn:api.serverTimestamp()});toast('Carta guardada correctamente.');await cargarDatos();mostrarCarta(cartaTemporal,true)}catch(e){errorConexion(e)}finally{ocupado=false;b.disabled=false;b.innerHTML='<i class="fa-solid fa-cloud-arrow-up mr-2"></i>Guardar emisión'}}
